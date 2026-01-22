@@ -73,7 +73,10 @@ export function hebrewToNumber(hebrew: string): number {
   return total;
 }
 
-// בניית regex לזיהוי מסכתות
+// תווים שמגדירים גבולות מילה בעברית
+const WORD_BOUNDARY_CHARS = '\\s\\.,;:!?\\-\\(\\)\\[\\]\\{\\}«»""\'״׳\\/\\\\';
+
+// בניית regex לזיהוי מסכתות - עם גבולות מילה
 function buildTractatePattern(): string {
   const allVariants: string[] = [];
   for (const variants of Object.values(TRACTATE_VARIANTS)) {
@@ -82,6 +85,29 @@ function buildTractatePattern(): string {
   // מיון לפי אורך יורד כדי לתפוס קודם את הארוכים
   allVariants.sort((a, b) => b.length - a.length);
   return allVariants.map(v => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+}
+
+// בדיקה שהמילה היא מילה שלמה ולא חלק ממילה אחרת
+function isWholeWord(text: string, startIndex: number, endIndex: number): boolean {
+  // בדיקת התו לפני ההתאמה
+  if (startIndex > 0) {
+    const charBefore = text[startIndex - 1];
+    // אם התו לפני הוא אות עברית - זה לא מילה שלמה
+    if (/[\u0590-\u05FF]/.test(charBefore)) {
+      return false;
+    }
+  }
+  
+  // בדיקת התו אחרי ההתאמה
+  if (endIndex < text.length) {
+    const charAfter = text[endIndex];
+    // אם התו אחרי הוא אות עברית - זה לא מילה שלמה
+    if (/[\u0590-\u05FF]/.test(charAfter)) {
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 // נורמליזציה של שם מסכת לשם הסטנדרטי
@@ -124,7 +150,15 @@ export function findTalmudReferences(text: string): TalmudReference[] {
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const posKey = `${match.index}-${match[0].length}`;
+      const startIdx = match.index;
+      const endIdx = match.index + match[0].length;
+      
+      // בדיקה שזו מילה שלמה ולא חלק ממילה אחרת
+      if (!isWholeWord(text, startIdx, endIdx)) {
+        continue;
+      }
+      
+      const posKey = `${startIdx}-${match[0].length}`;
       if (seenPositions.has(posKey)) continue;
       seenPositions.add(posKey);
 
