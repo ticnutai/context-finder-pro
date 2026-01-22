@@ -5,10 +5,12 @@ import { SearchResults } from '@/components/SearchResults';
 import { SearchHistory } from '@/components/SearchHistory';
 import { VisualQueryBuilder, VisualWordGroup } from '@/components/VisualQueryBuilder';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useWordLists } from '@/hooks/useWordLists';
 import { SearchCondition, SearchResult, SmartSearchOptions } from '@/types/search';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchConditionBuilder } from '@/components/SearchConditionBuilder';
+import { SettingsButton } from '@/components/SettingsButton';
 import { Wand2, Settings2 } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
 
@@ -24,6 +26,16 @@ const Index = () => {
     deleteHistoryItem,
     clearHistory,
   } = useLocalStorage();
+
+  const {
+    wordLists,
+    categories,
+    addWordList,
+    updateWordList,
+    deleteWordList,
+    addCategory,
+    deleteCategory,
+  } = useWordLists();
 
   const [text, setText] = useState('');
   const [mode, setMode] = useState<'visual' | 'advanced'>('visual');
@@ -346,6 +358,8 @@ const Index = () => {
                 onSearch={performSearch}
                 smartOptions={smartOptions}
                 onSmartOptionsChange={setSmartOptions}
+                wordLists={wordLists}
+                categories={categories}
               />
             </TabsContent>
           </Tabs>
@@ -366,6 +380,17 @@ const Index = () => {
           <p className="text-gold-light text-sm mt-1">הנתונים נשמרים במחשב שלך 💾</p>
         </div>
       </footer>
+
+      {/* Settings Button */}
+      <SettingsButton
+        wordLists={wordLists}
+        categories={categories}
+        onAddList={addWordList}
+        onUpdateList={updateWordList}
+        onDeleteList={deleteWordList}
+        onAddCategory={addCategory}
+        onDeleteCategory={deleteCategory}
+      />
     </div>
   );
 };

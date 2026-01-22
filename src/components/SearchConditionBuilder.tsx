@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SearchCondition, ConditionOperator, ProximityDirection, ListMode, SmartSearchOptions } from '@/types/search';
 import { ChevronDown } from 'lucide-react';
+import { WordListSelector } from './WordListSelector';
+import { WordList, WordListCategory } from '@/types/wordList';
 
 interface SearchConditionBuilderProps {
   conditions: SearchCondition[];
@@ -18,6 +20,8 @@ interface SearchConditionBuilderProps {
   onSearch: () => void;
   smartOptions: SmartSearchOptions;
   onSmartOptionsChange: (options: SmartSearchOptions) => void;
+  wordLists: WordList[];
+  categories: WordListCategory[];
 }
 
 // תבניות חיפוש מוכנות
@@ -138,6 +142,8 @@ export function SearchConditionBuilder({
   onSearch,
   smartOptions,
   onSmartOptionsChange,
+  wordLists,
+  categories,
 }: SearchConditionBuilderProps) {
   const [showTemplates, setShowTemplates] = useState(false);
   const [smartSearchOpen, setSmartSearchOpen] = useState(true);
@@ -389,7 +395,7 @@ export function SearchConditionBuilder({
                 {/* שדה הקלט */}
                 {condition.operator === 'LIST' && index > 0 ? (
                   <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
+                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl flex-wrap">
                       <List className="w-5 h-5 text-navy" />
                       <span className="text-sm text-muted-foreground font-medium">רשימת מילים (כל שורה = מילה אחת)</span>
                       <Select
@@ -406,6 +412,18 @@ export function SearchConditionBuilder({
                           <SelectItem value="all">כולן</SelectItem>
                         </SelectContent>
                       </Select>
+                      <WordListSelector
+                        wordLists={wordLists}
+                        categories={categories}
+                        onSelectList={(words) => {
+                          const existingWords = condition.listWords || [];
+                          const allWords = [...new Set([...existingWords, ...words])];
+                          updateCondition(condition.id, { 
+                            listWords: allWords, 
+                            term: allWords.join(' | ') 
+                          });
+                        }}
+                      />
                     </div>
                     <Textarea
                       value={(condition.listWords || []).join('\n')}
