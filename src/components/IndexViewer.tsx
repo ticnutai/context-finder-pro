@@ -102,9 +102,15 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6 text-right" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between flex-row-reverse">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-gold to-gold-light rounded-xl flex items-center justify-center shadow-md">
+            <Book className="w-5 h-5 text-navy" />
+          </div>
+          אינדקס מראי מקומות
+        </h3>
         <div className="flex gap-2">
           <Button
             variant={view === 'tractates' ? 'default' : 'outline'}
@@ -123,51 +129,45 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
             לפי מסמך
           </Button>
         </div>
-        <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-gold to-gold-light rounded-xl flex items-center justify-center shadow-md">
-            <Book className="w-5 h-5 text-navy" />
-          </div>
-          אינדקס מראי מקומות
-        </h3>
       </div>
 
-      {/* Stats */}
+      {/* Stats - RTL order */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-navy/10 to-navy/5 rounded-xl p-5 text-right border border-navy/10">
+        <div className="bg-gradient-to-bl from-navy/10 to-navy/5 rounded-xl p-5 text-right border border-navy/10">
           <div className="text-3xl font-bold text-navy">{documents.length}</div>
           <div className="text-sm text-muted-foreground mt-1">מסמכים</div>
         </div>
-        <div className="bg-gradient-to-br from-gold/20 to-gold/10 rounded-xl p-5 text-right border border-gold/20">
+        <div className="bg-gradient-to-bl from-gold/20 to-gold/10 rounded-xl p-5 text-right border border-gold/20">
           <div className="text-3xl font-bold text-navy">{groupedRefs.size}</div>
           <div className="text-sm text-muted-foreground mt-1">מסכתות</div>
         </div>
-        <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-xl p-5 text-right border border-accent/20">
+        <div className="bg-gradient-to-bl from-accent/20 to-accent/10 rounded-xl p-5 text-right border border-accent/20">
           <div className="text-3xl font-bold text-navy">{totalRefs}</div>
           <div className="text-sm text-muted-foreground mt-1">מראי מקומות</div>
         </div>
       </div>
 
       {/* Content */}
-      <ScrollArea className="h-[400px] pl-4">
+      <ScrollArea className="h-[400px]">
         {view === 'tractates' ? (
-          <Accordion type="multiple" className="space-y-3">
+          <Accordion type="multiple" className="space-y-3 pl-4">
             {Array.from(groupedRefs.entries())
               .sort((a, b) => a[0].localeCompare(b[0], 'he'))
               .map(([tractate, refs]) => (
                 <AccordionItem
                   key={tractate}
                   value={tractate}
-                  className="bg-card rounded-xl border-2 border-border/50 overflow-hidden shadow-sm"
+                  className="bg-card rounded-xl border-2 border-border/50 overflow-hidden shadow-sm border-r-4 border-r-gold"
                 >
-                  <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-secondary/30 flex-row-reverse">
-                    <div className="flex items-center gap-3 flex-row-reverse w-full justify-end">
-                      <Badge variant="secondary" className="rounded-full bg-gold/20 text-navy font-bold">
-                        {refs.length}
-                      </Badge>
-                      <span className="font-bold text-lg text-foreground">{tractate}</span>
+                  <AccordionTrigger rtl className="px-5 py-4 hover:no-underline hover:bg-secondary/30">
+                    <div className="flex items-center gap-3 w-full">
                       <div className="w-8 h-8 bg-gold/20 rounded-lg flex items-center justify-center">
                         <Book className="w-4 h-4 text-gold" />
                       </div>
+                      <span className="font-bold text-lg text-foreground">{tractate}</span>
+                      <Badge variant="secondary" className="rounded-full bg-gold/20 text-navy font-bold mr-auto">
+                        {refs.length}
+                      </Badge>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-5 pb-4">
@@ -175,9 +175,9 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
                       {refs.map((ref) => (
                         <div
                           key={ref.id}
-                          className="bg-gradient-to-l from-secondary/50 to-secondary/20 rounded-xl p-4 text-right border-r-4 border-gold"
+                          className="bg-gradient-to-l from-secondary/50 to-secondary/20 rounded-xl p-4 text-right border-r-4 border-gold/50"
                         >
-                          <div className="flex items-center justify-between flex-row-reverse mb-2">
+                          <div className="flex items-center justify-between mb-2">
                             <span className="font-bold text-foreground text-base">
                               {formatDafAmud(ref.daf_number, ref.amud)}
                             </span>
@@ -187,8 +187,8 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
                               onClick={() => ref.document && handleViewDocument(ref.document)}
                               className="h-8 text-xs gap-2 hover:bg-navy/10 rounded-lg"
                             >
-                              <Eye className="w-3.5 h-3.5" />
                               {ref.document?.name}
+                              <Eye className="w-3.5 h-3.5" />
                             </Button>
                           </div>
                           {ref.context && (
@@ -204,14 +204,14 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
               ))}
           </Accordion>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 pl-4">
             {documents.map((doc) => (
               <div
                 key={doc.id}
                 className="bg-card rounded-xl border-2 border-border/50 p-5 text-right shadow-sm hover:shadow-md transition-shadow border-r-4 border-navy"
               >
-                <div className="flex items-center justify-between flex-row-reverse mb-3">
-                  <div className="flex items-center gap-3 flex-row-reverse">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-navy/10 rounded-xl flex items-center justify-center">
                       <FileText className="w-5 h-5 text-navy" />
                     </div>
@@ -221,18 +221,18 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleViewDocument(doc)}
-                      className="h-9 w-9 text-navy hover:text-navy hover:bg-navy/10 rounded-xl"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
                       onClick={() => handleDeleteDocument(doc.id)}
                       className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
                     >
                       <Trash2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewDocument(doc)}
+                      className="h-9 w-9 text-navy hover:text-navy hover:bg-navy/10 rounded-xl"
+                    >
+                      <Eye className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -242,8 +242,10 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
               </div>
             ))}
             {documents.length === 0 && (
-              <div className="text-right py-12 text-muted-foreground bg-secondary/20 rounded-xl">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <div className="text-right py-12 text-muted-foreground bg-secondary/20 rounded-xl px-6">
+                <div className="flex justify-end mb-4">
+                  <FileText className="w-12 h-12 opacity-30" />
+                </div>
                 <p className="text-lg">אין מסמכים עדיין</p>
                 <p className="text-sm mt-1">העלה מסמך כדי להתחיל ליצור אינדקס</p>
               </div>
