@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { Settings, ListChecks } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, ListChecks, BookOpen, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WordListManager } from './WordListManager';
+import { DocumentUploader } from './DocumentUploader';
+import { IndexViewer } from './IndexViewer';
 import { WordList, WordListCategory } from '@/types/wordList';
+import { fetchTractates, Tractate } from '@/services/indexService';
 
 interface SettingsButtonProps {
   wordLists: WordList[];
@@ -26,6 +29,14 @@ export function SettingsButton({
   onDeleteCategory,
 }: SettingsButtonProps) {
   const [open, setOpen] = useState(false);
+  const [tractates, setTractates] = useState<Tractate[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    if (open) {
+      fetchTractates().then(setTractates).catch(console.error);
+    }
+  }, [open]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -42,22 +53,47 @@ export function SettingsButton({
         className="w-full sm:max-w-lg p-0"
         dir="rtl"
       >
-        <Tabs defaultValue="lists" className="h-full flex flex-col">
+        <Tabs defaultValue="index" className="h-full flex flex-col">
           <SheetHeader className="p-6 pb-0">
             <SheetTitle className="text-right text-2xl font-bold text-navy">
-              הגדרות
+              הגדרות ואינדקס
             </SheetTitle>
           </SheetHeader>
           
-          <TabsList className="mx-6 mt-4 rounded-xl bg-secondary">
+          <TabsList className="mx-6 mt-4 rounded-xl bg-secondary grid grid-cols-3">
+            <TabsTrigger 
+              value="index" 
+              className="gap-1 rounded-lg data-[state=active]:bg-navy data-[state=active]:text-white text-xs"
+            >
+              <BookOpen className="w-3 h-3" />
+              אינדקס
+            </TabsTrigger>
+            <TabsTrigger 
+              value="upload" 
+              className="gap-1 rounded-lg data-[state=active]:bg-navy data-[state=active]:text-white text-xs"
+            >
+              <Upload className="w-3 h-3" />
+              העלאה
+            </TabsTrigger>
             <TabsTrigger 
               value="lists" 
-              className="gap-2 rounded-lg data-[state=active]:bg-navy data-[state=active]:text-white flex-1"
+              className="gap-1 rounded-lg data-[state=active]:bg-navy data-[state=active]:text-white text-xs"
             >
-              <ListChecks className="w-4 h-4" />
+              <ListChecks className="w-3 h-3" />
               רשימות
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="index" className="flex-1 p-6 pt-4 overflow-auto">
+            <IndexViewer refreshTrigger={refreshTrigger} />
+          </TabsContent>
+
+          <TabsContent value="upload" className="flex-1 p-6 pt-4 overflow-auto">
+            <DocumentUploader 
+              tractates={tractates} 
+              onDocumentProcessed={() => setRefreshTrigger(t => t + 1)} 
+            />
+          </TabsContent>
 
           <TabsContent value="lists" className="flex-1 p-6 pt-4 overflow-auto">
             <WordListManager
