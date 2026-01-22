@@ -10,49 +10,80 @@ export interface TalmudReference {
 }
 
 // ============================================
-// רשימת מסכתות הש"ס עם וריאציות כתיב
-// ניתן להוסיף וריאציות נוספות לכל מסכת
+// מסד נתונים של כל מסכתות הש"ס הבבלי
+// עם מספר הדפים המקסימלי בכל מסכת
 // ============================================
-const TRACTATE_VARIANTS: Record<string, string[]> = {
-  'ברכות': ['ברכות', 'ברכ\'', 'ברכ׳', 'מס\' ברכות', 'מסכת ברכות'],
-  'שבת': ['שבת', 'שב\'', 'שב׳', 'מס\' שבת', 'מסכת שבת'],
-  'עירובין': ['עירובין', 'עירוב\'', 'עירוב׳', 'ערובין', 'עירו\'', 'עירו׳'],
-  'פסחים': ['פסחים', 'פסח\'', 'פסח׳', 'פסחי\'', 'פסחי׳'],
-  'שקלים': ['שקלים', 'שקל\'', 'שקל׳', 'שקלי\'', 'שקלי׳'],
-  'יומא': ['יומא', 'יומ\'', 'יומ׳'],
-  'סוכה': ['סוכה', 'סוכ\'', 'סוכ׳'],
-  'ביצה': ['ביצה', 'ביצ\'', 'ביצ׳'],
-  'ראש השנה': ['ראש השנה', 'ר"ה', 'ר״ה', 'רה"ש', 'רה״ש', 'ר\'\'ה', 'ראש-השנה'],
-  'תענית': ['תענית', 'תענ\'', 'תענ׳', 'תעני\'', 'תעני׳'],
-  'מגילה': ['מגילה', 'מגיל\'', 'מגיל׳', 'מגי\'', 'מגי׳'],
-  'מועד קטן': ['מועד קטן', 'מו"ק', 'מו״ק', 'מ"ק', 'מ״ק', 'מוע"ק', 'מוע״ק'],
-  'חגיגה': ['חגיגה', 'חגיג\'', 'חגיג׳', 'חגי\'', 'חגי׳'],
-  'יבמות': ['יבמות', 'יבמ\'', 'יבמ׳', 'יבמו\'', 'יבמו׳'],
-  'כתובות': ['כתובות', 'כתוב\'', 'כתוב׳', 'כתובו\'', 'כתובו׳'],
-  'נדרים': ['נדרים', 'נדר\'', 'נדר׳', 'נדרי\'', 'נדרי׳'],
-  'נזיר': ['נזיר', 'נזי\'', 'נזי׳'],
-  'סוטה': ['סוטה', 'סוט\'', 'סוט׳'],
-  'גיטין': ['גיטין', 'גיט\'', 'גיט׳', 'גיטי\'', 'גיטי׳'],
-  'קידושין': ['קידושין', 'קידוש\'', 'קידוש׳', 'קיד\'', 'קיד׳', 'קידושי\'', 'קידושי׳'],
-  'בבא קמא': ['בבא קמא', 'ב"ק', 'ב״ק', 'בב"ק', 'בב״ק', 'ב\'\'ק', 'בבא-קמא', 'ב"ק', 'ב״ק'],
-  'בבא מציעא': ['בבא מציעא', 'ב"מ', 'ב״מ', 'בב"מ', 'בב״מ', 'ב\'\'מ', 'בבא-מציעא'],
-  'בבא בתרא': ['בבא בתרא', 'ב"ב', 'ב״ב', 'בב"ב', 'בב״ב', 'ב\'\'ב', 'בבא-בתרא'],
-  'סנהדרין': ['סנהדרין', 'סנהד\'', 'סנהד׳', 'סנה\'', 'סנה׳', 'סנהדרי\'', 'סנהדרי׳'],
-  'מכות': ['מכות', 'מכו\'', 'מכו׳'],
-  'שבועות': ['שבועות', 'שבוע\'', 'שבוע׳', 'שבועו\'', 'שבועו׳'],
-  'עבודה זרה': ['עבודה זרה', 'ע"ז', 'ע״ז', 'עבו"ז', 'עבו״ז', 'ע\'\'ז', 'עבודה-זרה'],
-  'הוריות': ['הוריות', 'הורי\'', 'הורי׳', 'הוריו\'', 'הוריו׳'],
-  'זבחים': ['זבחים', 'זבח\'', 'זבח׳', 'זבחי\'', 'זבחי׳'],
-  'מנחות': ['מנחות', 'מנח\'', 'מנח׳', 'מנחו\'', 'מנחו׳'],
-  'חולין': ['חולין', 'חול\'', 'חול׳', 'חולי\'', 'חולי׳'],
-  'בכורות': ['בכורות', 'בכור\'', 'בכור׳', 'בכורו\'', 'בכורו׳'],
-  'ערכין': ['ערכין', 'ערכ\'', 'ערכ׳', 'ערכי\'', 'ערכי׳'],
-  'תמורה': ['תמורה', 'תמור\'', 'תמור׳'],
-  'כריתות': ['כריתות', 'כריתו\'', 'כריתו׳', 'כרית\'', 'כרית׳'],
-  'מעילה': ['מעילה', 'מעיל\'', 'מעיל׳'],
-  'תמיד': ['תמיד', 'תמי\'', 'תמי׳'],
-  'נדה': ['נדה', 'נד\'', 'נד׳'],
-};
+interface TractateInfo {
+  name: string;           // שם המסכת בעברית
+  nameEnglish: string;    // שם באנגלית
+  maxDaf: number;         // מספר הדף האחרון
+  seder: string;          // הסדר
+  variants: string[];     // וריאציות כתיב
+}
+
+const TRACTATES_DATA: TractateInfo[] = [
+  // סדר זרעים
+  { name: 'ברכות', nameEnglish: 'Berakhot', maxDaf: 64, seder: 'זרעים', variants: ['ברכות', 'ברכ\'', 'ברכ׳', 'מס\' ברכות', 'מסכת ברכות'] },
+  
+  // סדר מועד
+  { name: 'שבת', nameEnglish: 'Shabbat', maxDaf: 157, seder: 'מועד', variants: ['שבת', 'שב\'', 'שב׳', 'מס\' שבת', 'מסכת שבת'] },
+  { name: 'עירובין', nameEnglish: 'Eruvin', maxDaf: 105, seder: 'מועד', variants: ['עירובין', 'עירוב\'', 'עירוב׳', 'ערובין', 'עירו\'', 'עירו׳'] },
+  { name: 'פסחים', nameEnglish: 'Pesachim', maxDaf: 121, seder: 'מועד', variants: ['פסחים', 'פסח\'', 'פסח׳', 'פסחי\'', 'פסחי׳'] },
+  { name: 'שקלים', nameEnglish: 'Shekalim', maxDaf: 22, seder: 'מועד', variants: ['שקלים', 'שקל\'', 'שקל׳', 'שקלי\'', 'שקלי׳'] },
+  { name: 'יומא', nameEnglish: 'Yoma', maxDaf: 88, seder: 'מועד', variants: ['יומא', 'יומ\'', 'יומ׳'] },
+  { name: 'סוכה', nameEnglish: 'Sukkah', maxDaf: 56, seder: 'מועד', variants: ['סוכה', 'סוכ\'', 'סוכ׳'] },
+  { name: 'ביצה', nameEnglish: 'Beitzah', maxDaf: 40, seder: 'מועד', variants: ['ביצה', 'ביצ\'', 'ביצ׳'] },
+  { name: 'ראש השנה', nameEnglish: 'Rosh Hashanah', maxDaf: 35, seder: 'מועד', variants: ['ראש השנה', 'ר"ה', 'ר״ה', 'רה"ש', 'רה״ש', 'ר\'\'ה', 'ראש-השנה'] },
+  { name: 'תענית', nameEnglish: 'Taanit', maxDaf: 31, seder: 'מועד', variants: ['תענית', 'תענ\'', 'תענ׳', 'תעני\'', 'תעני׳'] },
+  { name: 'מגילה', nameEnglish: 'Megillah', maxDaf: 32, seder: 'מועד', variants: ['מגילה', 'מגיל\'', 'מגיל׳', 'מגי\'', 'מגי׳'] },
+  { name: 'מועד קטן', nameEnglish: 'Moed Katan', maxDaf: 29, seder: 'מועד', variants: ['מועד קטן', 'מו"ק', 'מו״ק', 'מ"ק', 'מ״ק', 'מוע"ק', 'מוע״ק'] },
+  { name: 'חגיגה', nameEnglish: 'Chagigah', maxDaf: 27, seder: 'מועד', variants: ['חגיגה', 'חגיג\'', 'חגיג׳', 'חגי\'', 'חגי׳'] },
+  
+  // סדר נשים
+  { name: 'יבמות', nameEnglish: 'Yevamot', maxDaf: 122, seder: 'נשים', variants: ['יבמות', 'יבמ\'', 'יבמ׳', 'יבמו\'', 'יבמו׳'] },
+  { name: 'כתובות', nameEnglish: 'Ketubot', maxDaf: 112, seder: 'נשים', variants: ['כתובות', 'כתוב\'', 'כתוב׳', 'כתובו\'', 'כתובו׳'] },
+  { name: 'נדרים', nameEnglish: 'Nedarim', maxDaf: 91, seder: 'נשים', variants: ['נדרים', 'נדר\'', 'נדר׳', 'נדרי\'', 'נדרי׳'] },
+  { name: 'נזיר', nameEnglish: 'Nazir', maxDaf: 66, seder: 'נשים', variants: ['נזיר', 'נזי\'', 'נזי׳'] },
+  { name: 'סוטה', nameEnglish: 'Sotah', maxDaf: 49, seder: 'נשים', variants: ['סוטה', 'סוט\'', 'סוט׳'] },
+  { name: 'גיטין', nameEnglish: 'Gittin', maxDaf: 90, seder: 'נשים', variants: ['גיטין', 'גיט\'', 'גיט׳', 'גיטי\'', 'גיטי׳'] },
+  { name: 'קידושין', nameEnglish: 'Kiddushin', maxDaf: 82, seder: 'נשים', variants: ['קידושין', 'קידוש\'', 'קידוש׳', 'קיד\'', 'קיד׳', 'קידושי\'', 'קידושי׳'] },
+  
+  // סדר נזיקין
+  { name: 'בבא קמא', nameEnglish: 'Bava Kamma', maxDaf: 119, seder: 'נזיקין', variants: ['בבא קמא', 'ב"ק', 'ב״ק', 'בב"ק', 'בב״ק', 'ב\'\'ק', 'בבא-קמא'] },
+  { name: 'בבא מציעא', nameEnglish: 'Bava Metzia', maxDaf: 119, seder: 'נזיקין', variants: ['בבא מציעא', 'ב"מ', 'ב״מ', 'בב"מ', 'בב״מ', 'ב\'\'מ', 'בבא-מציעא'] },
+  { name: 'בבא בתרא', nameEnglish: 'Bava Batra', maxDaf: 176, seder: 'נזיקין', variants: ['בבא בתרא', 'ב"ב', 'ב״ב', 'בב"ב', 'בב״ב', 'ב\'\'ב', 'בבא-בתרא'] },
+  { name: 'סנהדרין', nameEnglish: 'Sanhedrin', maxDaf: 113, seder: 'נזיקין', variants: ['סנהדרין', 'סנהד\'', 'סנהד׳', 'סנה\'', 'סנה׳', 'סנהדרי\'', 'סנהדרי׳'] },
+  { name: 'מכות', nameEnglish: 'Makkot', maxDaf: 24, seder: 'נזיקין', variants: ['מכות', 'מכו\'', 'מכו׳'] },
+  { name: 'שבועות', nameEnglish: 'Shevuot', maxDaf: 49, seder: 'נזיקין', variants: ['שבועות', 'שבוע\'', 'שבוע׳', 'שבועו\'', 'שבועו׳'] },
+  { name: 'עבודה זרה', nameEnglish: 'Avodah Zarah', maxDaf: 76, seder: 'נזיקין', variants: ['עבודה זרה', 'ע"ז', 'ע״ז', 'עבו"ז', 'עבו״ז', 'ע\'\'ז', 'עבודה-זרה'] },
+  { name: 'הוריות', nameEnglish: 'Horayot', maxDaf: 14, seder: 'נזיקין', variants: ['הוריות', 'הורי\'', 'הורי׳', 'הוריו\'', 'הוריו׳'] },
+  
+  // סדר קדשים
+  { name: 'זבחים', nameEnglish: 'Zevachim', maxDaf: 120, seder: 'קדשים', variants: ['זבחים', 'זבח\'', 'זבח׳', 'זבחי\'', 'זבחי׳'] },
+  { name: 'מנחות', nameEnglish: 'Menachot', maxDaf: 110, seder: 'קדשים', variants: ['מנחות', 'מנח\'', 'מנח׳', 'מנחו\'', 'מנחו׳'] },
+  { name: 'חולין', nameEnglish: 'Chullin', maxDaf: 142, seder: 'קדשים', variants: ['חולין', 'חול\'', 'חול׳', 'חולי\'', 'חולי׳'] },
+  { name: 'בכורות', nameEnglish: 'Bekhorot', maxDaf: 61, seder: 'קדשים', variants: ['בכורות', 'בכור\'', 'בכור׳', 'בכורו\'', 'בכורו׳'] },
+  { name: 'ערכין', nameEnglish: 'Arachin', maxDaf: 34, seder: 'קדשים', variants: ['ערכין', 'ערכ\'', 'ערכ׳', 'ערכי\'', 'ערכי׳'] },
+  { name: 'תמורה', nameEnglish: 'Temurah', maxDaf: 34, seder: 'קדשים', variants: ['תמורה', 'תמור\'', 'תמור׳'] },
+  { name: 'כריתות', nameEnglish: 'Keritot', maxDaf: 28, seder: 'קדשים', variants: ['כריתות', 'כריתו\'', 'כריתו׳', 'כרית\'', 'כרית׳'] },
+  { name: 'מעילה', nameEnglish: 'Meilah', maxDaf: 22, seder: 'קדשים', variants: ['מעילה', 'מעיל\'', 'מעיל׳'] },
+  { name: 'תמיד', nameEnglish: 'Tamid', maxDaf: 33, seder: 'קדשים', variants: ['תמיד', 'תמי\'', 'תמי׳'] },
+  
+  // סדר טהרות
+  { name: 'נדה', nameEnglish: 'Niddah', maxDaf: 73, seder: 'טהרות', variants: ['נדה', 'נד\'', 'נד׳'] },
+];
+
+// יצירת מפות גישה מהירה
+const TRACTATE_BY_NAME: Map<string, TractateInfo> = new Map();
+const TRACTATE_BY_VARIANT: Map<string, TractateInfo> = new Map();
+
+// אתחול המפות
+for (const tractate of TRACTATES_DATA) {
+  TRACTATE_BY_NAME.set(tractate.name, tractate);
+  for (const variant of tractate.variants) {
+    TRACTATE_BY_VARIANT.set(variant, tractate);
+  }
+}
 
 // ============================================
 // המרת אותיות עבריות למספרים
@@ -63,41 +94,6 @@ const HEBREW_NUMERALS: Record<string, number> = {
   'ס': 60, 'ע': 70, 'פ': 80, 'ף': 80, 'צ': 90, 'ץ': 90, 'ק': 100,
   'ר': 200, 'ש': 300, 'ת': 400,
 };
-
-// ============================================
-// תבניות לזיהוי עמודים (ע"א / ע"ב)
-// ניתן להוסיף תבניות נוספות
-// ============================================
-const AMUD_PATTERNS = {
-  // עמוד א
-  amudAlef: [
-    'ע"א', 'ע״א', 'ע\'א', 'ע\'\'א',
-    'עמוד א', 'עמ\' א', 'עמ׳ א',
-    '\\.', // נקודה = עמוד א
-    'ע"א', // עם מירכאות רגילות
-    ':א', // נקודתיים ואז א
-  ],
-  // עמוד ב
-  amudBet: [
-    'ע"ב', 'ע״ב', 'ע\'ב', 'ע\'\'ב',
-    'עמוד ב', 'עמ\' ב', 'עמ׳ ב',
-    ':', // נקודתיים = עמוד ב
-    'ע"ב', // עם מירכאות רגילות
-    ':ב', // נקודתיים ואז ב
-  ],
-};
-
-// ============================================
-// תבניות לזיהוי דפים
-// ניתן להוסיף תבניות נוספות
-// ============================================
-const DAF_PATTERNS = [
-  'דף',
-  'ד\'',
-  'ד׳',
-  'דף\'',
-  // ללא מילת מפתח - רק מספר
-];
 
 // המרת מספר עברי לערבי
 export function hebrewToNumber(hebrew: string): number {
@@ -113,14 +109,11 @@ export function hebrewToNumber(hebrew: string): number {
   return total;
 }
 
-// תווים שמגדירים גבולות מילה בעברית
-const WORD_BOUNDARY_CHARS = '\\s\\.,;:!?\\-\\(\\)\\[\\]\\{\\}«»""\'״׳\\/\\\\';
-
-// בניית regex לזיהוי מסכתות - עם גבולות מילה
+// בניית regex לזיהוי מסכתות
 function buildTractatePattern(): string {
   const allVariants: string[] = [];
-  for (const variants of Object.values(TRACTATE_VARIANTS)) {
-    allVariants.push(...variants);
+  for (const tractate of TRACTATES_DATA) {
+    allVariants.push(...tractate.variants);
   }
   // מיון לפי אורך יורד כדי לתפוס קודם את הארוכים
   allVariants.sort((a, b) => b.length - a.length);
@@ -153,25 +146,58 @@ function isWholeWord(text: string, startIndex: number, endIndex: number): boolea
 // נורמליזציה של שם מסכת לשם הסטנדרטי
 export function normalizeTractate(variant: string): string {
   const cleaned = variant.trim();
-  for (const [standard, variants] of Object.entries(TRACTATE_VARIANTS)) {
-    if (variants.some(v => v === cleaned || cleaned.includes(v))) {
-      return standard;
+  const tractate = TRACTATE_BY_VARIANT.get(cleaned);
+  if (tractate) {
+    return tractate.name;
+  }
+  
+  // חיפוש חלקי
+  for (const [key, info] of TRACTATE_BY_VARIANT) {
+    if (cleaned.includes(key) || key.includes(cleaned)) {
+      return info.name;
     }
   }
+  
   return cleaned;
 }
 
-// קבלת כל המסכתות הזמינות (לשימוש בממשק)
-export function getAllTractates(): string[] {
-  return Object.keys(TRACTATE_VARIANTS);
+// קבלת מידע על מסכת
+export function getTractateInfo(name: string): TractateInfo | undefined {
+  return TRACTATE_BY_NAME.get(name) || TRACTATE_BY_VARIANT.get(name);
+}
+
+// וולידציה של מספר דף - בודק שהדף קיים במסכת
+export function isValidDaf(tractate: string, daf: number): boolean {
+  const info = getTractateInfo(tractate);
+  if (!info) {
+    // מסכת לא מוכרת - נאפשר דפים עד 200 כברירת מחדל
+    return daf >= 2 && daf <= 200;
+  }
+  // הדף הראשון במסכתות התלמוד הוא דף ב (2)
+  return daf >= 2 && daf <= info.maxDaf;
+}
+
+// וולידציה של עמוד - יכול להיות רק א או ב
+export function isValidAmud(amud: string): amud is 'א' | 'ב' {
+  return amud === 'א' || amud === 'ב';
+}
+
+// קבלת כל המסכתות הזמינות
+export function getAllTractates(): TractateInfo[] {
+  return [...TRACTATES_DATA];
+}
+
+// קבלת מסכתות לפי סדר
+export function getTractatesBySeder(seder: string): TractateInfo[] {
+  return TRACTATES_DATA.filter(t => t.seder === seder);
 }
 
 // הוספת וריאציה חדשה למסכת קיימת
 export function addTractateVariant(tractate: string, variant: string): boolean {
-  if (TRACTATE_VARIANTS[tractate]) {
-    if (!TRACTATE_VARIANTS[tractate].includes(variant)) {
-      TRACTATE_VARIANTS[tractate].push(variant);
-    }
+  const info = TRACTATE_BY_NAME.get(tractate);
+  if (info && !info.variants.includes(variant)) {
+    info.variants.push(variant);
+    TRACTATE_BY_VARIANT.set(variant, info);
     return true;
   }
   return false;
@@ -182,41 +208,33 @@ export function findTalmudReferences(text: string): TalmudReference[] {
   const references: TalmudReference[] = [];
   const tractatePattern = buildTractatePattern();
   
-  // ============================================
   // תבניות לזיהוי מראי מקומות
-  // סדר חשוב! התבניות הארוכות והספציפיות קודם
-  // ============================================
   const patterns = [
     // תבנית 1: מסכת + דף + עמוד מפורש
-    // לדוג: "ברכות דף ד עמוד א", "ב"ק דף ל"ב ע"א"
     new RegExp(
       `(${tractatePattern})\\s*(?:דף|ד[׳'])?\\s*([א-ת]+"?[א-ת]*|[א-ת][׳']?|\\d+)\\s*(?:עמוד|עמ[׳']?)?\\s*(?:ע["\u0022״׳']?)?([אב])`,
       'g'
     ),
     
     // תבנית 2: מסכת + מספר + נקודתיים (= עמוד ב)
-    // לדוג: "שבת ז:", "ב"מ נט:"
     new RegExp(
       `(${tractatePattern})\\s*(?:דף|ד[׳'])?\\s*([א-ת]+"?[א-ת]*|[א-ת][׳']?|\\d+):(?![א-ת])`,
       'g'
     ),
     
     // תבנית 3: מסכת + מספר + נקודה (= עמוד א)
-    // לדוג: "שבת ז.", "ב"מ נט."
     new RegExp(
       `(${tractatePattern})\\s*(?:דף|ד[׳'])?\\s*([א-ת]+"?[א-ת]*|[א-ת][׳']?|\\d+)\\.(?![א-ת\\d])`,
       'g'
     ),
     
     // תבנית 4: מסכת + מספר:א/ב
-    // לדוג: "ברכות ב:א", "שבת ז:ב"
     new RegExp(
       `(${tractatePattern})\\s*([א-ת]+"?[א-ת]*|\\d+):([אב])`,
       'g'
     ),
     
     // תבנית 5: מסכת + דף בלבד (ברירת מחדל: עמוד א)
-    // לדוג: "שבת כ"ב", "ב"ק ל"ב"
     new RegExp(
       `(${tractatePattern})\\s*(?:דף|ד[׳'])?\\s*([א-ת]+"[א-ת]*|[א-ת][׳']|\\d+)(?![א-ת:])`,
       'g'
@@ -231,7 +249,7 @@ export function findTalmudReferences(text: string): TalmudReference[] {
       const startIdx = match.index;
       const endIdx = match.index + match[0].length;
       
-      // בדיקה שזו מילה שלמה ולא חלק ממילה אחרת
+      // בדיקה שזו מילה שלמה
       if (!isWholeWord(text, startIdx, endIdx)) {
         continue;
       }
@@ -248,11 +266,11 @@ export function findTalmudReferences(text: string): TalmudReference[] {
       const originalMatch = match[0];
       if (!amudStr) {
         if (originalMatch.includes(':') && !originalMatch.match(/:[אב]/)) {
-          amudStr = 'ב'; // נקודתיים = עמוד ב
+          amudStr = 'ב';
         } else if (originalMatch.includes('.')) {
-          amudStr = 'א'; // נקודה = עמוד א
+          amudStr = 'א';
         } else {
-          amudStr = 'א'; // ברירת מחדל
+          amudStr = 'א';
         }
       }
 
@@ -264,11 +282,19 @@ export function findTalmudReferences(text: string): TalmudReference[] {
         dafNum = hebrewToNumber(dafStr);
       }
 
-      // וידוא תקינות
-      if (dafNum <= 0 || dafNum > 200) continue;
-
       const tractate = normalizeTractate(tractateVariant);
+      
+      // ===== וולידציה =====
+      // בדיקה שהעמוד תקין (רק א או ב)
       const amud = amudStr === 'ב' ? 'ב' : 'א';
+      if (!isValidAmud(amud)) {
+        continue;
+      }
+      
+      // בדיקה שהדף קיים במסכת
+      if (!isValidDaf(tractate, dafNum)) {
+        continue;
+      }
 
       references.push({
         tractate,
@@ -313,49 +339,42 @@ export function numberToHebrew(num: number): string {
   const hundreds = ['', 'ק', 'ר', 'ש', 'ת'];
   
   let result = '';
+  let n = num;
   
   // מאות
-  if (num >= 100) {
-    const h = Math.floor(num / 100);
+  if (n >= 100) {
+    const h = Math.floor(n / 100);
     if (h <= 4) {
       result += hundreds[h];
     } else {
-      // 500-900
       result += 'ת' + hundreds[h - 4];
     }
-    num %= 100;
+    n %= 100;
   }
   
   // עשרות ואחדות
-  if (num === 15) {
+  if (n === 15) {
     result += 'טו';
-  } else if (num === 16) {
+  } else if (n === 16) {
     result += 'טז';
   } else {
-    if (num >= 10) {
-      result += tens[Math.floor(num / 10)];
-      num %= 10;
+    if (n >= 10) {
+      result += tens[Math.floor(n / 10)];
+      n %= 10;
     }
-    if (num > 0) {
-      result += ones[num];
+    if (n > 0) {
+      result += ones[n];
     }
   }
   
   return result;
 }
 
-// ============================================
-// פונקציות עזר לניהול פורמטים
-// ============================================
-
-// קבלת כל וריאציות המסכתות (לממשק ניהול)
+// קבלת כל וריאציות המסכתות
 export function getTractateVariants(): Record<string, string[]> {
-  return { ...TRACTATE_VARIANTS };
-}
-
-// הוספת מסכת חדשה עם וריאציות
-export function addTractate(name: string, variants: string[]): void {
-  if (!TRACTATE_VARIANTS[name]) {
-    TRACTATE_VARIANTS[name] = [name, ...variants];
+  const result: Record<string, string[]> = {};
+  for (const tractate of TRACTATES_DATA) {
+    result[tractate.name] = [...tractate.variants];
   }
+  return result;
 }
