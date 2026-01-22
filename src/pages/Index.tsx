@@ -39,6 +39,10 @@ const Index = () => {
   const [smartOptions, setSmartOptions] = useState<SmartSearchOptions>({
     numberToHebrew: true,
     wordVariations: false,
+    ignoreNikud: true,
+    sofitEquivalence: true,
+    gematriaSearch: false,
+    acronymExpansion: false,
   });
   
   const [hasSearched, setHasSearched] = useState(false);
@@ -126,13 +130,14 @@ const Index = () => {
 
     // Expand terms with smart variations
     const expandTerm = (term: string): string[] => {
-      if (mode === 'visual') {
-        return expandSearchTerm(term, {
-          includeNumberVariations: smartOptions.numberToHebrew,
-          includeWordVariations: smartOptions.wordVariations,
-        });
-      }
-      return [term];
+      return expandSearchTerm(term, {
+        includeNumberVariations: smartOptions.numberToHebrew,
+        includeWordVariations: smartOptions.wordVariations,
+        ignoreNikud: smartOptions.ignoreNikud,
+        sofitEquivalence: smartOptions.sofitEquivalence,
+        gematriaSearch: smartOptions.gematriaSearch,
+        acronymExpansion: smartOptions.acronymExpansion,
+      });
     };
 
     segments.forEach((segment) => {
@@ -331,8 +336,6 @@ const Index = () => {
                 groups={visualGroups}
                 onGroupsChange={setVisualGroups}
                 onSearch={performSearch}
-                smartOptions={smartOptions}
-                onSmartOptionsChange={setSmartOptions}
               />
             </TabsContent>
 
@@ -341,6 +344,8 @@ const Index = () => {
                 conditions={conditions}
                 onConditionsChange={setConditions}
                 onSearch={performSearch}
+                smartOptions={smartOptions}
+                onSmartOptionsChange={setSmartOptions}
               />
             </TabsContent>
           </Tabs>

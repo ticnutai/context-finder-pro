@@ -1,12 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, Sparkles, Hash, Languages, HelpCircle, Eye } from 'lucide-react';
+import { Plus, X, Sparkles, HelpCircle, Eye, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { SmartSearchOptions } from '@/types/search';
 
 interface VisualWordGroup {
   id: string;
@@ -18,8 +15,6 @@ interface VisualQueryBuilderProps {
   groups: VisualWordGroup[];
   onGroupsChange: (groups: VisualWordGroup[]) => void;
   onSearch: () => void;
-  smartOptions: SmartSearchOptions;
-  onSmartOptionsChange: (options: SmartSearchOptions) => void;
 }
 
 const groupConfig = {
@@ -68,8 +63,6 @@ export function VisualQueryBuilder({
   groups, 
   onGroupsChange, 
   onSearch,
-  smartOptions,
-  onSmartOptionsChange,
 }: VisualQueryBuilderProps) {
   const [newWords, setNewWords] = useState<Record<string, string>>({});
 
@@ -153,66 +146,12 @@ export function VisualQueryBuilder({
   return (
     <TooltipProvider delayDuration={300}>
       <div className="space-y-8 animate-fade-in" dir="rtl">
-        {/* Smart search options */}
-        <div className="bg-white rounded-2xl border-2 border-gold/50 p-6 shadow-md">
-          <div className="flex items-center justify-between gap-3 mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gold rounded-xl flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-navy" />
-              </div>
-              <div className="text-right">
-                <h3 className="font-bold text-lg text-navy">חיפוש חכם</h3>
-                <p className="text-sm text-muted-foreground">הפעל תכונות חיפוש מתקדמות</p>
-              </div>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="p-2 text-muted-foreground hover:text-navy transition-colors">
-                  <HelpCircle className="w-5 h-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-right bg-navy text-white p-3 rounded-xl">
-                <div className="font-bold mb-1">מה זה חיפוש חכם?</div>
-                <div className="text-sm opacity-90">
-                  התכונות האלה מרחיבות את החיפוש כדי למצוא יותר תוצאות רלוונטיות, כולל וריאציות של המילים שחיפשת.
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-              <div className="flex items-center gap-3 text-right">
-                <Hash className="w-5 h-5 text-navy" />
-                <div>
-                  <Label className="font-medium text-foreground">מספרים ← אותיות עבריות</Label>
-                  <p className="text-sm text-muted-foreground">דף 20 ימצא גם דף כ׳</p>
-                </div>
-              </div>
-              <Switch
-                checked={smartOptions.numberToHebrew}
-                onCheckedChange={(checked) => 
-                  onSmartOptionsChange({ ...smartOptions, numberToHebrew: checked })
-                }
-              />
-            </div>
-            
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-              <div className="flex items-center gap-3 text-right">
-                <Languages className="w-5 h-5 text-navy" />
-                <div>
-                  <Label className="font-medium text-foreground">וריאציות מילים</Label>
-                  <p className="text-sm text-muted-foreground">יחיד/רבים, עם/בלי ה׳ הידיעה</p>
-                </div>
-              </div>
-              <Switch
-                checked={smartOptions.wordVariations}
-                onCheckedChange={(checked) => 
-                  onSmartOptionsChange({ ...smartOptions, wordVariations: checked })
-                }
-              />
-            </div>
-          </div>
+        {/* הודעה שהחיפוש החכם זמין במצב מתקדם */}
+        <div className="flex items-center gap-3 p-4 bg-gold/10 rounded-xl border border-gold/30">
+          <Info className="w-5 h-5 text-navy shrink-0" />
+          <p className="text-sm text-navy">
+            <span className="font-semibold">טיפ:</span> לחיפוש חכם עם כללים מתקדמים (גימטריא, ראשי תיבות, ועוד), עבור ל<span className="font-bold">מצב מתקדם</span>
+          </p>
         </div>
 
         {/* Existing groups */}
