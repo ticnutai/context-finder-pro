@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Book, FileText, ChevronLeft, Trash2 } from 'lucide-react';
+import { Book, FileText, Trash2, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,14 +7,24 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { 
   fetchAllReferencesGrouped, 
   fetchDocuments, 
+  fetchReferencesByDocument,
   deleteDocument,
   SourceReference, 
   Document 
 } from '@/services/indexService';
 import { useToast } from '@/hooks/use-toast';
+import { DocumentViewer } from './DocumentViewer';
+import { numberToHebrew } from '@/utils/hebrewUtils';
 
 interface IndexViewerProps {
   refreshTrigger: number;
+}
+
+// פורמט דף ועמוד באותיות עבריות
+function formatDafAmud(daf: number, amud: string): string {
+  const dafHebrew = numberToHebrew(daf);
+  const amudHebrew = amud === 'א' || amud === 'ע"א' ? 'א' : 'ב';
+  return `דף ${dafHebrew} עמוד ${amudHebrew}`;
 }
 
 export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
@@ -23,6 +33,11 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
   const [groupedRefs, setGroupedRefs] = useState<Map<string, SourceReference[]>>(new Map());
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Document viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocRefs, setSelectedDocRefs] = useState<SourceReference[]>([]);
 
   useEffect(() => {
     loadData();
@@ -41,6 +56,21 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewDocument = async (doc: Document) => {
+    try {
+      const refs = await fetchReferencesByDocument(doc.id);
+      setSelectedDocument(doc);
+      setSelectedDocRefs(refs);
+      setViewerOpen(true);
+    } catch (error) {
+      toast({
+        title: 'שגיאה בטעינת המסמך',
+        description: 'אנא נסה שנית',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -75,7 +105,7 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
     <div className="space-y-6" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-navy flex items-center gap-2">
+        <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
           <Book className="w-5 h-5" />
           אינדקס מראי מקומות
         </h3>
@@ -102,15 +132,15 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-secondary/50 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-navy">{documents.length}</div>
+          <div className="text-2xl font-bold text-foreground">{documents.length}</div>
           <div className="text-sm text-muted-foreground">מסמכים</div>
         </div>
-        <div className="bg-gold/20 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-navy">{groupedRefs.size}</div>
+        <div className="bg-accent/20 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-foreground">{groupedRefs.size}</div>
           <div className="text-sm text-muted-foreground">מסכתות</div>
         </div>
-        <div className="bg-navy/10 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-navy">{totalRefs}</div>
+        <div className="bg-primary/10 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-foreground">{totalRefs}</div>
           <div className="text-sm text-muted-foreground">מראי מקומות</div>
         </div>
       </div>
@@ -125,12 +155,12 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
                 <AccordionItem
                   key={tractate}
                   value={tractate}
-                  className="bg-white rounded-xl border-2 border-border/50 overflow-hidden"
+                  className="bg-card rounded-xl border-2 border-border/50 overflow-hidden"
                 >
                   <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/30">
                     <div className="flex items-center gap-3">
-                      <Book className="w-4 h-4 text-gold" />
-                      <span className="font-semibold text-navy">{tractate}</span>
+                      <Book className="w-4 h-4 text-accent" />
+                      <span className="font-semibold text-foreground">{tractate}</span>
                       <Badge variant="secondary" className="rounded-full">
                         {refs.length}
                       </Badge>
@@ -144,12 +174,18 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
                           className="bg-secondary/30 rounded-lg p-3 text-sm"
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-navy">
-                              דף {ref.daf_number}{ref.amud}
+                            <span className="font-medium text-foreground">
+                              {formatDafAmud(ref.daf_number, ref.amud)}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => ref.document && handleViewDocument(ref.document)}
+                              className="h-7 text-xs gap-1"
+                            >
+                              <Eye className="w-3 h-3" />
                               {ref.document?.name}
-                            </span>
+                            </Button>
                           </div>
                           {ref.context && (
                             <p className="text-muted-foreground text-xs line-clamp-2">
@@ -168,21 +204,31 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="bg-white rounded-xl border-2 border-border/50 p-4"
+                className="bg-card rounded-xl border-2 border-border/50 p-4"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-navy" />
-                    <span className="font-semibold text-navy">{doc.name}</span>
+                    <FileText className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-foreground">{doc.name}</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteDocument(doc.id)}
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewDocument(doc)}
+                      className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {new Date(doc.created_at).toLocaleDateString('he-IL')}
@@ -197,6 +243,14 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
           </div>
         )}
       </ScrollArea>
+
+      {/* Document Viewer Dialog */}
+      <DocumentViewer
+        document={selectedDocument}
+        references={selectedDocRefs}
+        open={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+      />
     </div>
   );
 }
