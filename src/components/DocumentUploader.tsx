@@ -40,10 +40,42 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
     setFile(uploadedFile);
     setDocName(uploadedFile.name.replace(/\.[^/.]+$/, ''));
 
-    // קריאת תוכן הקובץ אם זה טקסט
-    if (uploadedFile.type.includes('text') || uploadedFile.name.endsWith('.txt')) {
+    const fileName = uploadedFile.name.toLowerCase();
+    const fileType = uploadedFile.type;
+
+    // קריאת תוכן הקובץ לפי סוג
+    if (
+      fileType.includes('text') || 
+      fileName.endsWith('.txt') ||
+      fileName.endsWith('.json') ||
+      fileName.endsWith('.html') ||
+      fileName.endsWith('.htm')
+    ) {
       const text = await uploadedFile.text();
-      handleTextChange(text);
+      
+      // עיבוד HTML - חילוץ טקסט בלבד
+      if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        // הסרת script ו-style
+        doc.querySelectorAll('script, style').forEach(el => el.remove());
+        const extractedText = doc.body?.textContent || doc.documentElement?.textContent || text;
+        handleTextChange(extractedText);
+      } 
+      // עיבוד JSON - חילוץ ערכי טקסט
+      else if (fileName.endsWith('.json')) {
+        try {
+          const jsonData = JSON.parse(text);
+          const extractedText = extractTextFromJson(jsonData);
+          handleTextChange(extractedText);
+        } catch {
+          // אם JSON לא תקין, נשתמש בטקסט הגולמי
+          handleTextChange(text);
+        }
+      } 
+      else {
+        handleTextChange(text);
+      }
     } else {
       toast({
         title: 'שים לב',
@@ -51,6 +83,24 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
         variant: 'default',
       });
     }
+  };
+
+  // פונקציה לחילוץ טקסט מ-JSON
+  const extractTextFromJson = (data: unknown): string => {
+    const texts: string[] = [];
+    
+    const extract = (obj: unknown) => {
+      if (typeof obj === 'string') {
+        texts.push(obj);
+      } else if (Array.isArray(obj)) {
+        obj.forEach(extract);
+      } else if (obj && typeof obj === 'object') {
+        Object.values(obj).forEach(extract);
+      }
+    };
+    
+    extract(data);
+    return texts.join('\n');
   };
 
   const handleProcess = async () => {
@@ -118,7 +168,7 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
         <input
           type="file"
           onChange={handleFileUpload}
-          accept=".txt,.doc,.docx,.pdf"
+          accept=".txt,.doc,.docx,.pdf,.json,.html,.htm"
           className="hidden"
           id="file-upload"
         />
@@ -132,7 +182,7 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
             )}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            TXT, DOC, DOCX, PDF
+            TXT, DOC, DOCX, PDF, JSON, HTML
           </p>
         </label>
         {file && (
