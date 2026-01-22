@@ -98,7 +98,12 @@ const HEBREW_NUMERALS: Record<string, number> = {
 // המרת מספר עברי לערבי
 export function hebrewToNumber(hebrew: string): number {
   // נקה גרשיים וסימנים
-  const cleaned = hebrew.replace(/['"״׳]/g, '');
+  const cleaned = hebrew.replace(/['"״׳\s]/g, '');
+  
+  // אם זה מספר ערבי - החזר אותו ישירות
+  if (/^\d+$/.test(cleaned)) {
+    return parseInt(cleaned, 10);
+  }
   
   let total = 0;
   for (const char of cleaned) {
@@ -107,6 +112,48 @@ export function hebrewToNumber(hebrew: string): number {
     }
   }
   return total;
+}
+
+// בדיקה אם הערך הוא מספר (עברי או ערבי) והחזרת הערך המספרי
+export function parseNumber(value: string): number | null {
+  const cleaned = value.replace(/['"״׳\s]/g, '').trim();
+  
+  if (!cleaned) return null;
+  
+  // מספר ערבי (73, 4, 120...)
+  if (/^\d+$/.test(cleaned)) {
+    return parseInt(cleaned, 10);
+  }
+  
+  // מספר עברי (עג, ד, קכ...)
+  if (/^[א-ת]+$/.test(cleaned)) {
+    const num = hebrewToNumber(cleaned);
+    return num > 0 ? num : null;
+  }
+  
+  // מספר עברי עם גרשיים (ע"ג, ל"ב...)
+  const hebrewWithQuotes = value.replace(/\s/g, '');
+  if (/^[א-ת]+["״׳'][א-ת]*$/.test(hebrewWithQuotes)) {
+    return hebrewToNumber(hebrewWithQuotes);
+  }
+  
+  return null;
+}
+
+// בדיקת התאמה בין מספר עברי לערבי
+// לדוגמה: 73 == עג, 4 == ד
+export function numbersMatch(num1: string | number, num2: string | number): boolean {
+  const n1 = typeof num1 === 'number' ? num1 : parseNumber(String(num1));
+  const n2 = typeof num2 === 'number' ? num2 : parseNumber(String(num2));
+  
+  if (n1 === null || n2 === null) return false;
+  return n1 === n2;
+}
+
+// המרה אוטומטית - מקבל כל פורמט ומחזיר מספר
+export function normalizeToNumber(value: string | number): number | null {
+  if (typeof value === 'number') return value;
+  return parseNumber(value);
 }
 
 // בניית regex לזיהוי מסכתות
@@ -167,14 +214,22 @@ export function getTractateInfo(name: string): TractateInfo | undefined {
 }
 
 // וולידציה של מספר דף - בודק שהדף קיים במסכת
-export function isValidDaf(tractate: string, daf: number): boolean {
+// תומך גם במספרים ערביים (73) וגם עבריים (עג)
+export function isValidDaf(tractate: string, daf: number | string): boolean {
+  // המרה למספר אם צריך
+  const dafNum = typeof daf === 'number' ? daf : normalizeToNumber(daf);
+  
+  if (dafNum === null || isNaN(dafNum)) {
+    return false;
+  }
+  
   const info = getTractateInfo(tractate);
   if (!info) {
     // מסכת לא מוכרת - נאפשר דפים עד 200 כברירת מחדל
-    return daf >= 2 && daf <= 200;
+    return dafNum >= 2 && dafNum <= 200;
   }
   // הדף הראשון במסכתות התלמוד הוא דף ב (2)
-  return daf >= 2 && daf <= info.maxDaf;
+  return dafNum >= 2 && dafNum <= info.maxDaf;
 }
 
 // וולידציה של עמוד - יכול להיות רק א או ב
