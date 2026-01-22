@@ -50,9 +50,24 @@ export async function fetchTractates(): Promise<Tractate[]> {
   return data || [];
 }
 
+// Sanitize filename for Supabase Storage (only ASCII allowed)
+function sanitizeFileName(originalName: string): string {
+  const extension = originalName.split('.').pop() || '';
+  const nameWithoutExt = originalName.slice(0, originalName.lastIndexOf('.') || originalName.length);
+  
+  // Replace Hebrew and non-ASCII characters with underscore, keep alphanumeric
+  const sanitized = nameWithoutExt
+    .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII
+    .replace(/[^a-zA-Z0-9_-]/g, '_') // Replace special chars
+    .replace(/_+/g, '_') // Collapse multiple underscores
+    .replace(/^_|_$/g, '') || 'document'; // Remove leading/trailing underscores
+  
+  return `${Date.now()}-${sanitized}.${extension}`;
+}
+
 // Upload document file
-export async function uploadDocument(file: File): Promise<string> {
-  const fileName = `${Date.now()}-${file.name}`;
+export async function uploadDocument(file: File, originalName?: string): Promise<string> {
+  const fileName = sanitizeFileName(file.name);
   const { data, error } = await supabase.storage
     .from('documents')
     .upload(fileName, file);
