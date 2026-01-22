@@ -68,7 +68,7 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
       // העלאת קובץ אם קיים
       let filePath: string | undefined;
       if (file) {
-        filePath = await uploadDocument(file);
+        filePath = await uploadDocument(file, file.name);
       }
 
       // יצירת רשומת מסמך
