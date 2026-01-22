@@ -1,17 +1,23 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, Search, List, HelpCircle, Sparkles, Eye, BookTemplate } from 'lucide-react';
+import { Plus, X, Search, List, HelpCircle, Sparkles, Eye, BookTemplate, Hash, Languages, FileText, Calculator, Type, AlignJustify } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { SearchCondition, ConditionOperator, ProximityDirection, ListMode } from '@/types/search';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SearchCondition, ConditionOperator, ProximityDirection, ListMode, SmartSearchOptions } from '@/types/search';
+import { ChevronDown } from 'lucide-react';
 
 interface SearchConditionBuilderProps {
   conditions: SearchCondition[];
   onConditionsChange: (conditions: SearchCondition[]) => void;
   onSearch: () => void;
+  smartOptions: SmartSearchOptions;
+  onSmartOptionsChange: (options: SmartSearchOptions) => void;
 }
 
 // תבניות חיפוש מוכנות
@@ -80,12 +86,61 @@ const operatorHelp: Record<ConditionOperator, { label: string; description: stri
   },
 };
 
+// הגדרות חיפוש חכם
+const smartSearchConfig = [
+  {
+    key: 'numberToHebrew' as keyof SmartSearchOptions,
+    icon: Hash,
+    label: 'מספרים ↔ אותיות',
+    description: 'דף 20 ימצא גם דף כ׳',
+    example: 'פרק 5 = פרק ה׳',
+  },
+  {
+    key: 'wordVariations' as keyof SmartSearchOptions,
+    icon: Languages,
+    label: 'וריאציות מילים',
+    description: 'יחיד/רבים, עם/בלי ה׳',
+    example: 'ספר = הספר = ספרים',
+  },
+  {
+    key: 'ignoreNikud' as keyof SmartSearchOptions,
+    icon: Type,
+    label: 'התעלמות מניקוד',
+    description: 'מתעלם מסימני ניקוד בחיפוש',
+    example: 'שָׁלוֹם = שלום',
+  },
+  {
+    key: 'sofitEquivalence' as keyof SmartSearchOptions,
+    icon: AlignJustify,
+    label: 'אותיות סופיות',
+    description: 'ך=כ, ם=מ, ן=נ, ף=פ, ץ=צ',
+    example: 'שלם = שלום (עם ם סופית)',
+  },
+  {
+    key: 'gematriaSearch' as keyof SmartSearchOptions,
+    icon: Calculator,
+    label: 'חיפוש גימטריא',
+    description: 'מוצא מילים עם אותו ערך מספרי',
+    example: 'אחד (13) = אהבה (13)',
+  },
+  {
+    key: 'acronymExpansion' as keyof SmartSearchOptions,
+    icon: FileText,
+    label: 'ראשי תיבות',
+    description: 'מרחיב קיצורים נפוצים',
+    example: 'רמב"ם = רבי משה בן מימון',
+  },
+];
+
 export function SearchConditionBuilder({
   conditions,
   onConditionsChange,
   onSearch,
+  smartOptions,
+  onSmartOptionsChange,
 }: SearchConditionBuilderProps) {
   const [showTemplates, setShowTemplates] = useState(false);
+  const [smartSearchOpen, setSmartSearchOpen] = useState(true);
 
   const addCondition = () => {
     const newCondition: SearchCondition = {
@@ -212,6 +267,74 @@ export function SearchConditionBuilder({
             ))}
           </div>
         )}
+
+        {/* חיפוש חכם */}
+        <Collapsible open={smartSearchOpen} onOpenChange={setSmartSearchOpen}>
+          <div className="bg-gradient-to-br from-gold/10 to-gold/5 rounded-2xl border-2 border-gold/30 overflow-hidden">
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gold/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gold rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-navy" />
+                  </div>
+                  <div className="text-right">
+                    <h3 className="font-bold text-lg text-navy">חיפוש חכם</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {Object.values(smartOptions).filter(Boolean).length} כללים פעילים
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-navy transition-transform duration-200 ${smartSearchOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {smartSearchConfig.map((config) => {
+                  const Icon = config.icon;
+                  const isActive = smartOptions[config.key];
+                  
+                  return (
+                    <Tooltip key={config.key}>
+                      <TooltipTrigger asChild>
+                        <div 
+                          className={`flex items-center justify-between p-4 rounded-xl transition-all cursor-pointer ${
+                            isActive 
+                              ? 'bg-white border-2 border-gold shadow-sm' 
+                              : 'bg-white/50 border-2 border-transparent hover:border-gold/30'
+                          }`}
+                          onClick={() => onSmartOptionsChange({ ...smartOptions, [config.key]: !isActive })}
+                        >
+                          <div className="flex items-center gap-3 text-right">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-gold text-navy' : 'bg-secondary text-muted-foreground'}`}>
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <Label className={`font-medium ${isActive ? 'text-navy' : 'text-foreground'}`}>{config.label}</Label>
+                              <p className="text-xs text-muted-foreground">{config.description}</p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={isActive}
+                            onCheckedChange={(checked) => onSmartOptionsChange({ ...smartOptions, [config.key]: checked })}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="bg-navy text-white p-3 rounded-xl max-w-xs text-right">
+                        <div className="font-bold mb-1">{config.label}</div>
+                        <div className="text-sm opacity-90 mb-2">{config.description}</div>
+                        <div className="text-xs bg-white/10 px-2 py-1 rounded-lg inline-block">
+                          דוגמה: {config.example}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
 
         {/* תנאי החיפוש */}
         <div className="space-y-4">

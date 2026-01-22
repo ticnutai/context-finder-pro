@@ -12,6 +12,58 @@ const letterToNumber: Record<string, number> = {
   'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400,
 };
 
+// מיפוי אותיות סופיות לרגילות
+const sofitToRegular: Record<string, string> = {
+  'ך': 'כ',
+  'ם': 'מ',
+  'ן': 'נ',
+  'ף': 'פ',
+  'ץ': 'צ',
+};
+
+const regularToSofit: Record<string, string> = {
+  'כ': 'ך',
+  'מ': 'ם',
+  'נ': 'ן',
+  'פ': 'ף',
+  'צ': 'ץ',
+};
+
+// ראשי תיבות נפוצים
+const commonAcronyms: Record<string, string[]> = {
+  'רמב"ם': ['רבי משה בן מימון', 'רבינו משה בן מימון'],
+  'רש"י': ['רבי שלמה יצחקי', 'רבינו שלמה יצחקי'],
+  'ר"ת': ['רבינו תם', 'ראשי תיבות'],
+  'ר"י': ['רבי יוחנן', 'רבינו יונה'],
+  'ר"מ': ['ראש מתיבתא', 'רבי מאיר'],
+  'ר"ע': ['רבי עקיבא'],
+  'ר"א': ['רבי אליעזר', 'רבי אלעזר'],
+  'ר"ש': ['רבי שמעון'],
+  'ר"ן': ['רבינו נסים'],
+  'ריטב"א': ['רבי יום טוב בן אברהם'],
+  'רשב"א': ['רבי שלמה בן אדרת'],
+  'רשב"ם': ['רבי שמואל בן מאיר'],
+  'ראב"ע': ['רבי אברהם בן עזרא'],
+  'ראב"ד': ['רבי אברהם בן דוד'],
+  'מהר"ל': ['מורנו הרב רבי ליווא'],
+  'הגר"א': ['הגאון רבי אליהו'],
+  'חז"ל': ['חכמינו זכרונם לברכה'],
+  'ז"ל': ['זכרונו לברכה', 'זיכרונו לברכה'],
+  'זצ"ל': ['זכר צדיק לברכה'],
+  'שליט"א': ['שיחיה לאורך ימים טובים אמן'],
+  'ע"ה': ['עליו השלום', 'עליה השלום'],
+  'ע"א': ['עמוד א', 'ערך א'],
+  'ע"ב': ['עמוד ב', 'ערך ב'],
+  'ד"ה': ['דיבור המתחיל'],
+  'וכו\'': ['וכולי', 'וכו׳'],
+  'ב"ה': ['ברוך השם', 'בעזרת השם', 'בית הלל'],
+  'ב"ש': ['בית שמאי'],
+  'או"ח': ['אורח חיים'],
+  'יו"ד': ['יורה דעה'],
+  'חו"מ': ['חושן משפט'],
+  'אה"ע': ['אבן העזר'],
+};
+
 // Convert number to Hebrew letters (Gematria)
 export function numberToHebrew(num: number): string {
   if (num <= 0 || num > 999) return '';
@@ -56,6 +108,107 @@ export function hebrewToNumber(str: string): number {
     }
   }
   return total;
+}
+
+// הסרת ניקוד מטקסט
+export function removeNikud(text: string): string {
+  // טווח תווי הניקוד העבריים: U+0591 עד U+05C7
+  return text.replace(/[\u0591-\u05C7]/g, '');
+}
+
+// נרמול אותיות סופיות (ממיר סופיות לרגילות)
+export function normalizeSofitLetters(text: string): string {
+  let result = '';
+  for (const char of text) {
+    result += sofitToRegular[char] || char;
+  }
+  return result;
+}
+
+// יצירת וריאציות עם אותיות סופיות
+export function getSofitVariations(word: string): string[] {
+  const variations: string[] = [word];
+  
+  // המר כל אות סופית לרגילה ולהיפך
+  let normalized = '';
+  let withSofit = '';
+  
+  for (let i = 0; i < word.length; i++) {
+    const char = word[i];
+    const isLastChar = i === word.length - 1;
+    
+    if (sofitToRegular[char]) {
+      // אות סופית - הוסף גם רגילה
+      normalized += sofitToRegular[char];
+      withSofit += char;
+    } else if (regularToSofit[char] && isLastChar) {
+      // אות רגילה בסוף מילה - הוסף גם סופית
+      normalized += char;
+      withSofit += regularToSofit[char];
+    } else {
+      normalized += char;
+      withSofit += char;
+    }
+  }
+  
+  if (normalized !== word) variations.push(normalized);
+  if (withSofit !== word) variations.push(withSofit);
+  
+  return [...new Set(variations)];
+}
+
+// חישוב גימטריא של מילה
+export function calculateGematria(word: string): number {
+  const cleanWord = removeNikud(word);
+  return hebrewToNumber(cleanWord);
+}
+
+// מציאת מילים עם אותו ערך גימטריא נפוצות
+export function getGematriaEquivalents(word: string): string[] {
+  const value = calculateGematria(word);
+  const equivalents: string[] = [];
+  
+  // מילים נפוצות עם ערכי גימטריא ידועים
+  const knownGematrias: Record<number, string[]> = {
+    26: ['יהוה', 'כו'],
+    86: ['אלהים'],
+    17: ['טוב'],
+    18: ['חי', 'יח'],
+    13: ['אחד', 'אהבה'],
+    44: ['דם', 'ילד'],
+    50: ['כל', 'מי', 'ים', 'לב'],
+    72: ['חסד'],
+    314: ['שדי'],
+    541: ['ישראל'],
+    358: ['משיח', 'נחש'],
+  };
+  
+  if (knownGematrias[value]) {
+    equivalents.push(...knownGematrias[value].filter(w => w !== word));
+  }
+  
+  return equivalents;
+}
+
+// הרחבת ראשי תיבות
+export function expandAcronym(text: string): string[] {
+  const expansions: string[] = [text];
+  
+  // חפש ראשי תיבות בטקסט
+  for (const [acronym, meanings] of Object.entries(commonAcronyms)) {
+    // בדוק אם הטקסט מכיל את ראש התיבות (עם או בלי גרשיים)
+    const cleanAcronym = acronym.replace(/["'״׳]/g, '');
+    const cleanText = text.replace(/["'״׳]/g, '');
+    
+    if (cleanText.includes(cleanAcronym) || text.includes(acronym)) {
+      meanings.forEach(meaning => {
+        expansions.push(text.replace(acronym, meaning));
+        expansions.push(text.replace(cleanAcronym, meaning));
+      });
+    }
+  }
+  
+  return [...new Set(expansions)];
 }
 
 // Generate all variations of a term (number <-> Hebrew letters)
@@ -126,18 +279,68 @@ export function getWordVariations(word: string): string[] {
 export function expandSearchTerm(term: string, options: {
   includeNumberVariations?: boolean;
   includeWordVariations?: boolean;
+  ignoreNikud?: boolean;
+  sofitEquivalence?: boolean;
+  gematriaSearch?: boolean;
+  acronymExpansion?: boolean;
 }): string[] {
   let allVariations: string[] = [term];
   
+  // הסרת ניקוד
+  if (options.ignoreNikud) {
+    const withoutNikud = removeNikud(term);
+    if (withoutNikud !== term) {
+      allVariations.push(withoutNikud);
+    }
+  }
+  
+  // המרת מספרים לאותיות עבריות
   if (options.includeNumberVariations) {
     const numVars = generateVariations(term);
     allVariations.push(...numVars);
   }
   
+  // וריאציות מילים (יחיד/רבים, ה' הידיעה)
   if (options.includeWordVariations) {
     const wordVars = getWordVariations(term);
     allVariations.push(...wordVars);
   }
   
+  // שקילות אותיות סופיות
+  if (options.sofitEquivalence) {
+    const sofitVars = getSofitVariations(term);
+    allVariations.push(...sofitVars);
+  }
+  
+  // חיפוש גימטריא
+  if (options.gematriaSearch) {
+    const gematriaVars = getGematriaEquivalents(term);
+    allVariations.push(...gematriaVars);
+  }
+  
+  // הרחבת ראשי תיבות
+  if (options.acronymExpansion) {
+    const acronymVars = expandAcronym(term);
+    allVariations.push(...acronymVars);
+  }
+  
   return [...new Set(allVariations)];
+}
+
+// נרמול טקסט לחיפוש (מסיר ניקוד ומנרמל אותיות סופיות)
+export function normalizeTextForSearch(text: string, options: {
+  ignoreNikud?: boolean;
+  sofitEquivalence?: boolean;
+}): string {
+  let result = text;
+  
+  if (options.ignoreNikud) {
+    result = removeNikud(result);
+  }
+  
+  if (options.sofitEquivalence) {
+    result = normalizeSofitLetters(result);
+  }
+  
+  return result;
 }
