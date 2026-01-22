@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    /* Navy & Gold Theme */
+    --background: 220 30% 98%;
+    --foreground: 220 50% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 50% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 50% 15%;
+
+    --primary: 220 60% 25%;
+    --primary-foreground: 45 100% 96%;
+
+    --secondary: 220 30% 94%;
+    --secondary-foreground: 220 50% 20%;
+
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 20% 45%;
+
+    --accent: 45 90% 55%;
+    --accent-foreground: 220 60% 15%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 25% 88%;
+    --input: 220 25% 92%;
+    --ring: 220 60% 25%;
+
+    --radius: 0.75rem;
+
+    /* Custom colors */
+    --navy: 220 60% 20%;
+    --navy-light: 220 50% 30%;
+    --gold: 45 90% 55%;
+    --gold-light: 45 85% 70%;
+    --gold-dark: 40 80% 45%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 50% 8%;
+    --foreground: 45 20% 95%;
+
+    --card: 220 50% 12%;
+    --card-foreground: 45 20% 95%;
+
+    --popover: 220 50% 12%;
+    --popover-foreground: 45 20% 95%;
+
+    --primary: 45 90% 55%;
+    --primary-foreground: 220 60% 10%;
+
+    --secondary: 220 40% 18%;
+    --secondary-foreground: 45 20% 90%;
+
+    --muted: 220 40% 15%;
+    --muted-foreground: 220 15% 60%;
+
+    --accent: 45 80% 50%;
+    --accent-foreground: 220 60% 10%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 40% 20%;
+    --input: 220 40% 20%;
+    --ring: 45 80% 50%;
+
+    --navy: 220 50% 30%;
+    --navy-light: 220 40% 40%;
+    --gold: 45 85% 55%;
+    --gold-light: 45 80% 65%;
+    --gold-dark: 40 75% 45%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Heebo', sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    direction: rtl;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--gold-dark)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-navy {
+    background-color: hsl(var(--navy));
+  }
+
+  .bg-navy-light {
+    background-color: hsl(var(--navy-light));
+  }
+
+  .bg-gold {
+    background-color: hsl(var(--gold));
+  }
+
+  .bg-gold-light {
+    background-color: hsl(var(--gold-light));
+  }
+
+  .text-navy {
+    color: hsl(var(--navy));
+  }
+
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+
+  .border-navy {
+    border-color: hsl(var(--navy));
+  }
+
+  .border-gold {
+    border-color: hsl(var(--gold));
+  }
+
+  .glass-effect {
+    @apply bg-card border border-border shadow-sm;
+  }
+
+  .highlight-match {
+    background-color: hsl(45 90% 75% / 0.8);
+    @apply rounded px-1 py-0.5 font-semibold;
+  }
+
+  .highlight-match-secondary {
+    background-color: hsl(220 60% 80% / 0.6);
+    @apply rounded px-1 py-0.5 font-semibold;
+  }
+
+  .highlight-match-tertiary {
+    background-color: hsl(142 60% 80% / 0.6);
+    @apply rounded px-1 py-0.5 font-semibold;
+  }
+
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
