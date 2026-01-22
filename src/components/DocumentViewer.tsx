@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { X, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +11,28 @@ interface DocumentViewerProps {
   references: SourceReference[];
   open: boolean;
   onClose: () => void;
+}
+
+// הסרת תגיות HTML וחילוץ טקסט בלבד
+function stripHtmlTags(html: string): string {
+  // יצירת אלמנט זמני לפרסור HTML
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  
+  // הסרת תגיות style ו-script
+  const scripts = doc.querySelectorAll('script, style, head');
+  scripts.forEach(el => el.remove());
+  
+  // חילוץ הטקסט בלבד
+  const text = doc.body?.textContent || doc.documentElement?.textContent || html;
+  
+  // ניקוי רווחים מיותרים
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+// הסרת אותיות אנגליות (משאיר עברית, מספרים, סימני פיסוק)
+function removeEnglishLetters(text: string): string {
+  // משאיר: עברית, מספרים, רווחים, סימני פיסוק נפוצים
+  return text.replace(/[a-zA-Z]/g, '');
 }
 
 // המרת מספרים לאותיות עבריות בטקסט
@@ -44,10 +66,33 @@ function convertNumbersToHebrewLetters(text: string): string {
   return result;
 }
 
+// ניקוי מלא של הטקסט
+function cleanDocumentContent(content: string): string {
+  // בדוק אם זה HTML
+  const isHtml = content.trim().startsWith('<') || content.includes('<!DOCTYPE');
+  
+  let text = content;
+  
+  if (isHtml) {
+    text = stripHtmlTags(content);
+  }
+  
+  // הסר אותיות אנגליות
+  text = removeEnglishLetters(text);
+  
+  // המר מספרים לאותיות עבריות
+  text = convertNumbersToHebrewLetters(text);
+  
+  // נקה רווחים כפולים
+  text = text.replace(/\s+/g, ' ').trim();
+  
+  return text;
+}
+
 // פורמט מראה מקום עם אותיות עבריות
 function formatReferenceHebrew(ref: SourceReference): string {
   const dafHebrew = numberToHebrew(ref.daf_number);
-  const amudHebrew = ref.amud === 'א' || ref.amud === 'ע"א' ? 'א' : 'ב';
+  const amudHebrew = ref.amud === 'א' || ref.amud.includes('א') ? 'א' : 'ב';
   return `${ref.tractate?.name || ''} דף ${dafHebrew} עמוד ${amudHebrew}`;
 }
 
@@ -56,54 +101,51 @@ export function DocumentViewer({ document, references, open, onClose }: Document
   const highlightedContent = useMemo(() => {
     if (!document?.content) return null;
 
-    let content = document.content;
-    
-    // המרת מספרים לאותיות עבריות
-    content = convertNumbersToHebrewLetters(content);
+    // ניקוי התוכן - הסרת HTML ואותיות אנגליות
+    const cleanedContent = cleanDocumentContent(document.content);
 
-    // מיון הפניות לפי מיקום (מהסוף להתחלה כדי לא לקלקל אינדקסים)
-    const sortedRefs = [...references]
-      .filter(ref => ref.position_in_doc !== null)
-      .sort((a, b) => (b.position_in_doc || 0) - (a.position_in_doc || 0));
+    // עבור תצוגה פשוטה ללא הדגשות (אם אין מראי מקומות)
+    if (references.length === 0) {
+      return [{ text: cleanedContent, highlighted: false }];
+    }
 
-    // יצירת segments עם הדגשות
+    // כאשר יש מראי מקומות, חפש אותם בטקסט המנוקה והדגש
     const segments: { text: string; highlighted: boolean; ref?: SourceReference }[] = [];
-    
-    if (sortedRefs.length === 0) {
-      segments.push({ text: content, highlighted: false });
-    } else {
-      let lastEnd = content.length;
+    let remainingText = cleanedContent;
+    let currentPos = 0;
+
+    // מיין לפי מיקום
+    const sortedRefs = [...references].sort((a, b) => (a.position_in_doc || 0) - (b.position_in_doc || 0));
+
+    for (const ref of sortedRefs) {
+      // חפש את הטקסט המקורי של ההפניה בתוכן המנוקה
+      const searchText = removeEnglishLetters(ref.original_text);
+      const foundIndex = remainingText.indexOf(searchText);
       
-      for (const ref of sortedRefs) {
-        const start = ref.position_in_doc || 0;
-        const originalText = ref.original_text;
-        const end = start + originalText.length;
-        
-        // טקסט אחרי ההדגשה
-        if (end < lastEnd) {
-          const afterText = content.substring(end, lastEnd);
-          if (afterText) {
-            segments.unshift({ text: afterText, highlighted: false });
-          }
+      if (foundIndex !== -1) {
+        // הוסף טקסט לפני ההדגשה
+        if (foundIndex > 0) {
+          segments.push({ text: remainingText.substring(0, foundIndex), highlighted: false });
         }
         
-        // הטקסט המודגש
-        segments.unshift({ 
-          text: convertNumbersToHebrewLetters(originalText), 
+        // הוסף את הטקסט המודגש
+        segments.push({ 
+          text: convertNumbersToHebrewLetters(searchText), 
           highlighted: true,
           ref 
         });
         
-        lastEnd = start;
-      }
-      
-      // טקסט לפני ההדגשה הראשונה
-      if (lastEnd > 0) {
-        segments.unshift({ text: content.substring(0, lastEnd), highlighted: false });
+        // עדכן את הטקסט הנותר
+        remainingText = remainingText.substring(foundIndex + searchText.length);
       }
     }
 
-    return segments;
+    // הוסף את הטקסט הנותר
+    if (remainingText) {
+      segments.push({ text: remainingText, highlighted: false });
+    }
+
+    return segments.length > 0 ? segments : [{ text: cleanedContent, highlighted: false }];
   }, [document?.content, references]);
 
   if (!document) return null;
