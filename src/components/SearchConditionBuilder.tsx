@@ -1,8 +1,11 @@
-import { Plus, X, Search, List } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, X, Search, List, HelpCircle, Sparkles, Eye, BookTemplate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import { SearchCondition, ConditionOperator, ProximityDirection, ListMode } from '@/types/search';
 
 interface SearchConditionBuilderProps {
@@ -11,11 +14,79 @@ interface SearchConditionBuilderProps {
   onSearch: () => void;
 }
 
+// תבניות חיפוש מוכנות
+const searchTemplates = [
+  {
+    id: 'exact-phrase',
+    name: 'חיפוש מדויק',
+    description: 'מצא ביטוי מדויק בטקסט',
+    conditions: [{ id: '1', term: '', operator: 'AND' as ConditionOperator }],
+  },
+  {
+    id: 'include-exclude',
+    name: 'כולל + לא כולל',
+    description: 'מצא מילה אחת אבל לא אחרת',
+    conditions: [
+      { id: '1', term: '', operator: 'AND' as ConditionOperator },
+      { id: '2', term: '', operator: 'NOT' as ConditionOperator },
+    ],
+  },
+  {
+    id: 'multiple-options',
+    name: 'אחת מכמה אפשרויות',
+    description: 'מצא אחת מרשימת מילים',
+    conditions: [
+      { id: '1', term: '', operator: 'AND' as ConditionOperator },
+      { id: '2', term: '', operator: 'LIST' as ConditionOperator, listWords: [], listMode: 'any' as ListMode },
+    ],
+  },
+  {
+    id: 'proximity',
+    name: 'מילים קרובות',
+    description: 'מצא מילים בקרבה זו לזו',
+    conditions: [
+      { id: '1', term: '', operator: 'AND' as ConditionOperator },
+      { id: '2', term: '', operator: 'NEAR' as ConditionOperator, proximityRange: 10, proximityDirection: 'both' as ProximityDirection },
+    ],
+  },
+];
+
+// הסברים לאופרטורים
+const operatorHelp: Record<ConditionOperator, { label: string; description: string; example: string }> = {
+  AND: {
+    label: 'וגם',
+    description: 'שתי המילים חייבות להופיע יחד',
+    example: '"תורה" וגם "משה" → ימצא רק שורות עם שתי המילים',
+  },
+  OR: {
+    label: 'או',
+    description: 'לפחות אחת מהמילים צריכה להופיע',
+    example: '"משה" או "אהרון" → ימצא שורות עם אחת מהן',
+  },
+  NOT: {
+    label: 'ללא',
+    description: 'המילה לא צריכה להופיע',
+    example: '"תורה" ללא "משנה" → ימצא תורה ללא משנה',
+  },
+  NEAR: {
+    label: 'בקרבת',
+    description: 'המילים צריכות להיות קרובות זו לזו',
+    example: '"משה" בקרבת 5 מילים מ-"הר" → ימצא כשהן קרובות',
+  },
+  LIST: {
+    label: 'רשימה',
+    description: 'חפש אחת או כל המילים מרשימה',
+    example: 'רשימה של שמות → ימצא כל שם מהרשימה',
+  },
+};
+
 export function SearchConditionBuilder({
   conditions,
   onConditionsChange,
   onSearch,
 }: SearchConditionBuilderProps) {
+  const [showTemplates, setShowTemplates] = useState(false);
+
   const addCondition = () => {
     const newCondition: SearchCondition = {
       id: crypto.randomUUID(),
@@ -46,151 +117,270 @@ export function SearchConditionBuilder({
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      // Don't trigger search on Enter in textarea (need Shift+Enter or button)
       if ((e.target as HTMLElement).tagName !== 'TEXTAREA') {
         onSearch();
       }
     }
   };
 
+  const applyTemplate = (template: typeof searchTemplates[0]) => {
+    const newConditions = template.conditions.map(c => ({
+      ...c,
+      id: crypto.randomUUID(),
+    }));
+    onConditionsChange(newConditions);
+    setShowTemplates(false);
+  };
+
+  // בניית תצוגה מקדימה של השאילתה
+  const queryPreview = useMemo(() => {
+    const parts: string[] = [];
+    
+    conditions.forEach((cond, index) => {
+      if (!cond.term.trim() && cond.operator !== 'LIST') return;
+      if (cond.operator === 'LIST' && (!cond.listWords || cond.listWords.length === 0)) return;
+      
+      if (index > 0 && parts.length > 0) {
+        parts.push(operatorHelp[cond.operator].label);
+      }
+      
+      if (cond.operator === 'LIST') {
+        const words = cond.listWords?.slice(0, 3).join(', ') || '';
+        const more = (cond.listWords?.length || 0) > 3 ? '...' : '';
+        parts.push(`[${words}${more}]`);
+      } else {
+        parts.push(`"${cond.term}"`);
+      }
+    });
+    
+    return parts.join(' ');
+  }, [conditions]);
+
   return (
-    <div className="glass-effect rounded-xl p-6 space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">בנאי שאילתות חיפוש</h2>
-        <Button
-          onClick={addCondition}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          הוסף תנאי
-        </Button>
-      </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="glass-effect rounded-2xl p-6 space-y-6 animate-fade-in" dir="rtl">
+        {/* כותרת עם כפתורים */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-navy rounded-xl flex items-center justify-center">
+              <Search className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-right">
+              <h2 className="text-xl font-bold text-navy">בנאי שאילתות חיפוש</h2>
+              <p className="text-sm text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowTemplates(!showTemplates)}
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-xl border-gold text-navy hover:bg-gold/10"
+            >
+              <BookTemplate className="w-4 h-4" />
+              תבניות
+            </Button>
+            <Button
+              onClick={addCondition}
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-xl border-navy text-navy hover:bg-navy/10"
+            >
+              <Plus className="w-4 h-4" />
+              הוסף תנאי
+            </Button>
+          </div>
+        </div>
 
-      <div className="space-y-3">
-        {conditions.map((condition, index) => (
-          <div
-            key={condition.id}
-            className="animate-slide-up"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className="flex items-start gap-3">
-              {index > 0 && (
-                <Select
-                  value={condition.operator}
-                  onValueChange={(value: ConditionOperator) =>
-                    updateCondition(condition.id, { operator: value })
-                  }
-                >
-                  <SelectTrigger className="w-28 bg-card mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AND">וגם</SelectItem>
-                    <SelectItem value="OR">או</SelectItem>
-                    <SelectItem value="NOT">לא</SelectItem>
-                    <SelectItem value="NEAR">בקרבת</SelectItem>
-                    <SelectItem value="LIST">רשימה</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+        {/* תבניות חיפוש */}
+        {showTemplates && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-secondary/30 rounded-xl border border-gold/30 animate-fade-in">
+            <div className="col-span-full flex items-center gap-2 pb-2 border-b border-border">
+              <Sparkles className="w-4 h-4 text-gold" />
+              <span className="font-semibold text-navy">תבניות חיפוש מוכנות</span>
+            </div>
+            {searchTemplates.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => applyTemplate(template)}
+                className="text-right p-4 rounded-xl bg-white border-2 border-transparent hover:border-gold transition-all hover:shadow-md"
+              >
+                <div className="font-semibold text-navy">{template.name}</div>
+                <div className="text-sm text-muted-foreground">{template.description}</div>
+              </button>
+            ))}
+          </div>
+        )}
 
-              {index === 0 && <div className="w-28 text-sm text-muted-foreground text-center mt-4">חפש:</div>}
-
-              {condition.operator === 'LIST' && index > 0 ? (
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2 p-3 bg-secondary/30 rounded-lg border border-border/50">
-                    <List className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">רשימת מילים (כל שורה = מילה אחת)</span>
+        {/* תנאי החיפוש */}
+        <div className="space-y-4">
+          {conditions.map((condition, index) => (
+            <div
+              key={condition.id}
+              className="animate-slide-up bg-white rounded-xl p-4 border-2 border-border/50 hover:border-navy/30 transition-all"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="flex items-start gap-3">
+                {/* אופרטור */}
+                {index > 0 ? (
+                  <div className="flex items-center gap-1">
                     <Select
-                      value={condition.listMode || 'any'}
-                      onValueChange={(value: ListMode) =>
-                        updateCondition(condition.id, { listMode: value })
+                      value={condition.operator}
+                      onValueChange={(value: ConditionOperator) =>
+                        updateCondition(condition.id, { operator: value })
                       }
                     >
-                      <SelectTrigger className="w-32 bg-card">
+                      <SelectTrigger className="w-28 bg-secondary rounded-xl font-semibold border-2 border-navy/20">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">אחת מהן (או)</SelectItem>
-                        <SelectItem value="all">כולן (וגם)</SelectItem>
+                      <SelectContent className="bg-white border-2 border-navy/20 rounded-xl">
+                        <SelectItem value="AND">וגם</SelectItem>
+                        <SelectItem value="OR">או</SelectItem>
+                        <SelectItem value="NOT">ללא</SelectItem>
+                        <SelectItem value="NEAR">בקרבת</SelectItem>
+                        <SelectItem value="LIST">רשימה</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="p-1 text-muted-foreground hover:text-navy transition-colors">
+                          <HelpCircle className="w-4 h-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-right bg-navy text-white p-3 rounded-xl">
+                        <div className="font-bold mb-1">{operatorHelp[condition.operator].label}</div>
+                        <div className="text-sm opacity-90 mb-2">{operatorHelp[condition.operator].description}</div>
+                        <div className="text-xs bg-white/10 p-2 rounded-lg">
+                          {operatorHelp[condition.operator].example}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  <Textarea
-                    value={(condition.listWords || []).join('\n')}
-                    onChange={(e) => handleListWordsChange(condition.id, e.target.value)}
-                    placeholder="הזן מילים - כל שורה מילה אחת..."
-                    className="min-h-[100px] bg-card font-mono text-sm"
+                ) : (
+                  <Badge variant="secondary" className="h-10 px-4 bg-navy text-white font-semibold rounded-xl">
+                    חפש:
+                  </Badge>
+                )}
+
+                {/* שדה הקלט */}
+                {condition.operator === 'LIST' && index > 0 ? (
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
+                      <List className="w-5 h-5 text-navy" />
+                      <span className="text-sm text-muted-foreground font-medium">רשימת מילים (כל שורה = מילה אחת)</span>
+                      <Select
+                        value={condition.listMode || 'any'}
+                        onValueChange={(value: ListMode) =>
+                          updateCondition(condition.id, { listMode: value })
+                        }
+                      >
+                        <SelectTrigger className="w-32 bg-white rounded-xl border-2 border-gold/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white rounded-xl">
+                          <SelectItem value="any">אחת מהן</SelectItem>
+                          <SelectItem value="all">כולן</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Textarea
+                      value={(condition.listWords || []).join('\n')}
+                      onChange={(e) => handleListWordsChange(condition.id, e.target.value)}
+                      placeholder="הזן מילים - כל שורה מילה אחת..."
+                      className="min-h-[100px] bg-secondary/30 font-mono text-sm rounded-xl border-2 border-border focus:border-navy"
+                      dir="rtl"
+                    />
+                  </div>
+                ) : (
+                  <Input
+                    value={condition.term}
+                    onChange={(e) => updateCondition(condition.id, { term: e.target.value })}
+                    onKeyPress={handleKeyPress}
+                    placeholder={index === 0 ? 'הזן מילת חיפוש...' : 'הזן תנאי נוסף...'}
+                    className="flex-1 bg-secondary/30 h-12 text-lg rounded-xl border-2 border-border focus:border-navy"
                     dir="rtl"
                   />
-                </div>
-              ) : (
-                <Input
-                  value={condition.term}
-                  onChange={(e) => updateCondition(condition.id, { term: e.target.value })}
-                  onKeyPress={handleKeyPress}
-                  placeholder={index === 0 ? 'הזן מילת חיפוש...' : 'הזן תנאי נוסף...'}
-                  className="flex-1 bg-card"
-                />
-              )}
+                )}
 
-              {conditions.length > 1 && (
-                <Button
-                  onClick={() => removeCondition(condition.id)}
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive shrink-0 mt-2"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                {/* כפתור מחיקה */}
+                {conditions.length > 1 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => removeCondition(condition.id)}
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl shrink-0"
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-destructive text-white rounded-lg">
+                      הסר תנאי זה
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+
+              {/* אפשרויות קרבה */}
+              {index > 0 && condition.operator === 'NEAR' && (
+                <div className="flex items-center gap-3 mt-4 p-4 bg-gold/10 rounded-xl border border-gold/30">
+                  <span className="text-sm font-medium text-navy whitespace-nowrap">טווח:</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={condition.proximityRange || 10}
+                    onChange={(e) => updateCondition(condition.id, { proximityRange: parseInt(e.target.value) || 10 })}
+                    className="w-20 bg-white rounded-xl border-2 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground">מילים</span>
+                  
+                  <Select
+                    value={condition.proximityDirection || 'both'}
+                    onValueChange={(value: ProximityDirection) =>
+                      updateCondition(condition.id, { proximityDirection: value })
+                    }
+                  >
+                    <SelectTrigger className="w-32 bg-white rounded-xl border-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white rounded-xl">
+                      <SelectItem value="before">לפני</SelectItem>
+                      <SelectItem value="after">אחרי</SelectItem>
+                      <SelectItem value="both">לפני ואחרי</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
+          ))}
+        </div>
 
-            {/* Proximity options */}
-            {index > 0 && condition.operator === 'NEAR' && (
-              <div className="flex items-center gap-3 mt-2 mr-28 p-3 bg-secondary/30 rounded-lg border border-border/50">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">טווח:</span>
-                <Input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={condition.proximityRange || 10}
-                  onChange={(e) => updateCondition(condition.id, { proximityRange: parseInt(e.target.value) || 10 })}
-                  className="w-20 bg-card"
-                />
-                <span className="text-sm text-muted-foreground">מילים</span>
-                
-                <Select
-                  value={condition.proximityDirection || 'both'}
-                  onValueChange={(value: ProximityDirection) =>
-                    updateCondition(condition.id, { proximityDirection: value })
-                  }
-                >
-                  <SelectTrigger className="w-32 bg-card">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="before">לפני</SelectItem>
-                    <SelectItem value="after">אחרי</SelectItem>
-                    <SelectItem value="both">לפני ואחרי</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* תצוגה מקדימה של השאילתה */}
+        {queryPreview && (
+          <div className="flex items-start gap-3 p-4 bg-navy/5 rounded-xl border border-navy/20 animate-fade-in">
+            <Eye className="w-5 h-5 text-navy mt-0.5 shrink-0" />
+            <div className="text-right">
+              <div className="text-sm font-semibold text-navy mb-1">תצוגה מקדימה של השאילתה:</div>
+              <div className="text-base font-mono text-foreground bg-white px-3 py-2 rounded-lg inline-block">
+                {queryPreview}
               </div>
-            )}
+            </div>
           </div>
-        ))}
-      </div>
+        )}
 
-      <Button
-        onClick={onSearch}
-        className="w-full mt-4 gap-2 bg-primary hover:bg-primary/90"
-        size="lg"
-      >
-        <Search className="w-5 h-5" />
-        חפש בטקסט
-      </Button>
-    </div>
+        {/* כפתור חיפוש */}
+        <Button
+          onClick={onSearch}
+          size="lg"
+          className="w-full h-16 text-xl rounded-2xl bg-navy hover:bg-navy-light text-white font-bold shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] gap-3"
+        >
+          <Search className="w-6 h-6" />
+          חפש בטקסט
+        </Button>
+      </div>
+    </TooltipProvider>
   );
 }
