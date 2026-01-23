@@ -6,13 +6,16 @@ import { SearchHistory } from '@/components/SearchHistory';
 import { VisualQueryBuilder, VisualWordGroup } from '@/components/VisualQueryBuilder';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useWordLists } from '@/hooks/useWordLists';
-import { SearchCondition, SearchResult, SmartSearchOptions } from '@/types/search';
+import { SearchCondition, SearchResult, SmartSearchOptions, FilterRules } from '@/types/search';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchConditionBuilder } from '@/components/SearchConditionBuilder';
+import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
 import { SettingsButton } from '@/components/SettingsButton';
-import { Wand2, Settings2 } from 'lucide-react';
+import { Wand2, Settings2, Filter } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 const Index = () => {
   const { toast } = useToast();
@@ -56,6 +59,16 @@ const Index = () => {
     gematriaSearch: false,
     acronymExpansion: false,
   });
+
+  const [filterRules, setFilterRules] = useState<FilterRules>({
+    positionRules: [],
+    textPositionRules: [],
+    mustContainNumbers: false,
+    mustContainLettersOnly: false,
+    caseSensitive: false,
+  });
+
+  const [filterRulesOpen, setFilterRulesOpen] = useState(false);
   
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -125,6 +138,70 @@ const Index = () => {
     return result.length > 0 ? result : [{ id: crypto.randomUUID(), term: '', operator: 'AND' }];
   };
 
+  // Helper function to check filter rules
+  const checkFilterRules = (segment: string, words: string[]): boolean => {
+    // Check position rules (before/after)
+    for (const rule of filterRules.positionRules) {
+      if (!rule.word || !rule.relativeWord) continue;
+      
+      const wordIndex = words.findIndex(w => w.includes(rule.word.toLowerCase()));
+      const relativeIndex = words.findIndex(w => w.includes(rule.relativeWord.toLowerCase()));
+      
+      if (wordIndex === -1 || relativeIndex === -1) continue;
+      
+      const distance = Math.abs(wordIndex - relativeIndex);
+      const maxDist = rule.maxDistance || 10;
+      
+      if (rule.position === 'before' && (wordIndex >= relativeIndex || distance > maxDist)) {
+        return false;
+      }
+      if (rule.position === 'after' && (wordIndex <= relativeIndex || distance > maxDist)) {
+        return false;
+      }
+    }
+    
+    // Check text position rules (start/end of line)
+    for (const rule of filterRules.textPositionRules) {
+      if (!rule.word) continue;
+      
+      const withinWords = rule.withinWords || 3;
+      const wordLower = rule.word.toLowerCase();
+      
+      if (rule.position === 'start') {
+        const startWords = words.slice(0, withinWords);
+        if (!startWords.some(w => w.includes(wordLower))) {
+          return false;
+        }
+      }
+      if (rule.position === 'end') {
+        const endWords = words.slice(-withinWords);
+        if (!endWords.some(w => w.includes(wordLower))) {
+          return false;
+        }
+      }
+    }
+    
+    // Check word count limits
+    if (filterRules.minWordCount && words.length < filterRules.minWordCount) {
+      return false;
+    }
+    if (filterRules.maxWordCount && words.length > filterRules.maxWordCount) {
+      return false;
+    }
+    
+    // Check must contain numbers
+    if (filterRules.mustContainNumbers && !/\d/.test(segment)) {
+      return false;
+    }
+    
+    // Check letters only
+    if (filterRules.mustContainLettersOnly && /[\d]/.test(segment)) {
+      return false;
+    }
+    
+    return true;
+  };
+
   const performSearch = () => {
     const searchConditions = mode === 'visual' 
       ? visualToConditions(visualGroups) 
@@ -154,6 +231,7 @@ const Index = () => {
 
     segments.forEach((segment) => {
       const segmentNorm = normalize(segment);
+      const segmentWords = segment.toLowerCase().split(/\s+/).filter(w => w.trim());
       const matchedTerms: string[] = [];
 
       let hasRequiredTerms = true;
@@ -222,7 +300,12 @@ const Index = () => {
       });
 
       const hasContent = firstTermConditions.some(c => c.term.trim()) || listConditions.some(c => (c.listWords?.length || 0) > 0);
-      const matches = hasContent && hasRequiredTerms && hasListMatch && !hasExcludedTerm && matchedTerms.length > 0;
+      const passesBasicSearch = hasContent && hasRequiredTerms && hasListMatch && !hasExcludedTerm && matchedTerms.length > 0;
+      
+      // Apply filter rules
+      const passesFilterRules = checkFilterRules(segment, segmentWords);
+      
+      const matches = passesBasicSearch && passesFilterRules;
 
       if (matches) {
         const startIndex = text.indexOf(segment);
@@ -363,6 +446,44 @@ const Index = () => {
               />
             </TabsContent>
           </Tabs>
+
+          {/* Filter Rules Section */}
+          <Collapsible open={filterRulesOpen} onOpenChange={setFilterRulesOpen}>
+            <div className="bg-gradient-to-br from-gold/5 to-navy/5 rounded-2xl border-2 border-gold/20 overflow-hidden">
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-white/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-gold to-gold-dark rounded-xl flex items-center justify-center shadow-md">
+                      <Filter className="w-6 h-6 text-navy" />
+                    </div>
+                    <div className="text-right">
+                      <h3 className="font-bold text-lg text-navy">כללי סינון מתקדמים</h3>
+                      <p className="text-sm text-muted-foreground">
+                        מיקום מילים, לפני/אחרי, אורך שורה ועוד
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {(filterRules.positionRules.length > 0 || filterRules.textPositionRules.length > 0) && (
+                      <span className="bg-gold text-navy text-sm font-semibold px-3 py-1 rounded-full">
+                        {filterRules.positionRules.length + filterRules.textPositionRules.length} כללים
+                      </span>
+                    )}
+                    <ChevronDown className={`w-5 h-5 text-navy transition-transform duration-200 ${filterRulesOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <div className="p-5 pt-0">
+                  <FilterRulesBuilder
+                    rules={filterRules}
+                    onRulesChange={setFilterRules}
+                  />
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
 
           {/* Results */}
           <SearchResults
