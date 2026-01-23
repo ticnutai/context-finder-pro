@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchConditionBuilder } from '@/components/SearchConditionBuilder';
 import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
+import { RulesValidationSystem } from '@/components/RulesValidationSystem';
 import { SettingsButton } from '@/components/SettingsButton';
 import { Wand2, Settings2, Filter } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
@@ -484,6 +485,12 @@ const Index = () => {
               </CollapsibleContent>
             </div>
           </Collapsible>
+
+          {/* Validation System */}
+          <RulesValidationSystem 
+            rules={filterRules}
+            checkFilterRules={checkFilterRules}
+          />
 
           {/* Results */}
           <SearchResults
