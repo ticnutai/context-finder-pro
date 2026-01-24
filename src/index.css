@@ -167,17 +167,17 @@
 
   .highlight-match {
     background-color: hsl(45 90% 75% / 0.8);
-    @apply rounded px-1 py-0.5 font-semibold;
+    @apply rounded px-1 py-0.5 font-semibold transition-all duration-300;
   }
 
   .highlight-match-secondary {
     background-color: hsl(220 60% 80% / 0.6);
-    @apply rounded px-1 py-0.5 font-semibold;
+    @apply rounded px-1 py-0.5 font-semibold transition-all duration-300;
   }
 
   .highlight-match-tertiary {
     background-color: hsl(142 60% 80% / 0.6);
-    @apply rounded px-1 py-0.5 font-semibold;
+    @apply rounded px-1 py-0.5 font-semibold transition-all duration-300;
   }
 
   .touch-target {
@@ -194,6 +194,27 @@
 
   .animate-pulse-soft {
     animation: pulseSoft 2s ease-in-out infinite;
+  }
+
+  .floating-search-btn {
+    @apply fixed bottom-8 left-8 z-50;
+    animation: floatBounce 3s ease-in-out infinite;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@keyframes floatBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }
 

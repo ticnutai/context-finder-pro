@@ -11,7 +11,7 @@ import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
 import { RulesValidationSystem } from '@/components/RulesValidationSystem';
 import { ActiveRulesPreview } from '@/components/ActiveRulesPreview';
 import { SettingsButton } from '@/components/SettingsButton';
-import { Search, Plus, X, Filter, Sparkles, ChevronDown, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, Zap } from 'lucide-react';
+import { Search, Plus, X, Filter, Sparkles, ChevronDown, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, Zap, ArrowUp } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -496,16 +496,20 @@ const Index = () => {
     return parts.join(' ');
   }, [conditions]);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen bg-background" dir="rtl">
         <Header />
         
-        <main className="container mx-auto px-6 py-10">
-          <div className="max-w-4xl mx-auto space-y-8">
+        <main className="container mx-auto px-4 sm:px-6 py-8">
+          <div className="max-w-5xl mx-auto space-y-6">
             {/* Hero section */}
-            <div className="text-center py-8 animate-fade-in">
-              <div className="flex justify-center mb-6">
+            <div className="text-center py-6 animate-fade-in">
+              <div className="flex justify-center mb-4">
                 <SearchHistory
                   history={history}
                   onRestore={handleRestore}
@@ -513,10 +517,10 @@ const Index = () => {
                   onClear={clearHistory}
                 />
               </div>
-              <h2 className="text-4xl font-extrabold text-navy mb-3">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-navy mb-2">
                 מערכת חיפוש מתקדמת
               </h2>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              <p className="text-base text-muted-foreground max-w-xl mx-auto">
                 בנה שאילתות חיפוש מורכבות עם כל הכלים במקום אחד
               </p>
             </div>
@@ -525,16 +529,16 @@ const Index = () => {
             <TextInput text={text} onTextChange={setText} />
 
             {/* Unified Search Builder */}
-            <div className="glass-effect rounded-2xl p-6 space-y-6 animate-fade-in">
+            <div className="glass-effect rounded-2xl p-5 space-y-5 animate-fade-in">
               {/* Header with buttons */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-md">
-                    <Search className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-md">
+                    <Search className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-right">
-                    <h2 className="text-xl font-bold text-navy">בנאי שאילתות חיפוש</h2>
-                    <p className="text-sm text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
+                    <h2 className="text-lg font-bold text-navy">בנאי שאילתות חיפוש</h2>
+                    <p className="text-xs text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
                   </div>
                 </div>
                 
@@ -861,16 +865,6 @@ const Index = () => {
               </div>
             </Collapsible>
 
-            {/* Search Button */}
-            <Button
-              onClick={performSearch}
-              size="lg"
-              className="w-full h-18 text-xl rounded-2xl bg-gradient-to-r from-navy to-navy-light hover:from-navy-light hover:to-navy text-white font-bold shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] py-6"
-            >
-              <Zap className="w-7 h-7 ml-3 text-gold" />
-              חפש עכשיו
-            </Button>
-
             {/* Validation System */}
             <RulesValidationSystem 
               rules={filterRules}
@@ -886,8 +880,36 @@ const Index = () => {
           </div>
         </main>
 
+        {/* Floating Search Button */}
+        <div className="floating-search-btn">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={performSearch}
+                size="lg"
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-navy to-navy-light hover:from-gold hover:to-gold-dark text-white hover:text-navy shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95"
+              >
+                <Search className="w-7 h-7" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-navy text-white rounded-xl font-semibold">
+              חפש עכשיו
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Scroll to top button */}
+        <Button
+          onClick={scrollToTop}
+          variant="outline"
+          size="icon"
+          className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full border-2 border-gold bg-white/90 backdrop-blur-sm hover:bg-gold hover:text-navy shadow-lg transition-all"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </Button>
+
         {/* Footer */}
-        <footer className="bg-navy border-t-4 border-gold mt-16 py-8">
+        <footer className="bg-navy border-t-4 border-gold mt-12 py-6">
           <div className="container mx-auto px-6 text-center">
             <p className="text-white font-medium">חיפוש חכם - ניתוח טקסטים מתקדם</p>
             <p className="text-gold-light text-sm mt-1">הנתונים נשמרים במחשב שלך 💾</p>
