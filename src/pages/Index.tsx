@@ -502,14 +502,14 @@ const Index = () => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen bg-gradient-to-b from-amber-50/50 to-white" dir="rtl">
+      <div className="min-h-screen bg-background" dir="rtl">
         <Header />
         
         <main className="container mx-auto px-4 sm:px-6 py-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
             {/* Hero section */}
-            <div className="text-center py-8 animate-fade-in">
-              <div className="flex justify-center mb-6">
+            <div className="text-center py-6 animate-fade-in">
+              <div className="flex justify-center mb-4">
                 <SearchHistory
                   history={history}
                   onRestore={handleRestore}
@@ -517,10 +517,10 @@ const Index = () => {
                   onClear={clearHistory}
                 />
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-navy mb-2">
                 מערכת חיפוש מתקדמת
               </h2>
-              <p className="text-muted-foreground max-w-lg mx-auto">
+              <p className="text-base text-muted-foreground max-w-xl mx-auto">
                 בנה שאילתות חיפוש מורכבות עם כל הכלים במקום אחד
               </p>
             </div>
@@ -528,86 +528,84 @@ const Index = () => {
             {/* Text input */}
             <TextInput text={text} onTextChange={setText} />
 
-            {/* Unified Search Builder Card */}
-            <div className="bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden animate-fade-in">
-              {/* Header */}
-              <div className="p-6 border-b border-border/30">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-md">
-                      <Search className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-right">
-                      <h2 className="text-xl font-bold text-foreground">בנאי שאילתות חיפוש</h2>
-                      <p className="text-sm text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
-                    </div>
+            {/* Unified Search Builder */}
+            <div className="glass-effect rounded-2xl p-5 space-y-5 animate-fade-in">
+              {/* Header with buttons */}
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-md">
+                    <Search className="w-5 h-5 text-white" />
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={() => setShowTemplates(!showTemplates)}
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 rounded-xl border-amber-300 text-foreground hover:bg-amber-50 hover:border-amber-400"
-                    >
-                      <BookTemplate className="w-4 h-4 text-amber-600" />
-                      תבניות
-                    </Button>
-                    <Button
-                      onClick={addCondition}
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 rounded-xl border-amber-300 text-foreground hover:bg-amber-50 hover:border-amber-400"
-                    >
-                      <Plus className="w-4 h-4 text-amber-600" />
-                      הוסף תנאי
-                    </Button>
+                  <div className="text-right">
+                    <h2 className="text-lg font-bold text-navy">בנאי שאילתות חיפוש</h2>
+                    <p className="text-xs text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
                   </div>
                 </div>
-
-                {/* Search templates */}
-                {showTemplates && (
-                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-200/50 animate-fade-in">
-                    <div className="col-span-full flex items-center gap-2 pb-3 border-b border-amber-200/50">
-                      <Sparkles className="w-4 h-4 text-amber-600" />
-                      <span className="font-semibold text-foreground">תבניות חיפוש מוכנות</span>
-                    </div>
-                    {searchTemplates.map((template) => (
-                      <button
-                        key={template.id}
-                        onClick={() => applyTemplate(template)}
-                        className="text-right p-4 rounded-xl bg-white border-2 border-transparent hover:border-amber-400 transition-all hover:shadow-md"
-                      >
-                        <div className="font-semibold text-foreground">{template.name}</div>
-                        <div className="text-sm text-muted-foreground">{template.description}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setShowTemplates(!showTemplates)}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 rounded-xl border-gold text-navy hover:bg-gold/10"
+                  >
+                    <BookTemplate className="w-4 h-4" />
+                    תבניות
+                  </Button>
+                  <Button
+                    onClick={addCondition}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 rounded-xl border-navy text-navy hover:bg-navy/10"
+                  >
+                    <Plus className="w-4 h-4" />
+                    הוסף תנאי
+                  </Button>
+                </div>
               </div>
 
+              {/* Search templates */}
+              {showTemplates && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-secondary/30 rounded-xl border border-gold/30 animate-fade-in">
+                  <div className="col-span-full flex items-center gap-2 pb-2 border-b border-border">
+                    <Sparkles className="w-4 h-4 text-gold" />
+                    <span className="font-semibold text-navy">תבניות חיפוש מוכנות</span>
+                  </div>
+                  {searchTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => applyTemplate(template)}
+                      className="text-right p-4 rounded-xl bg-white border-2 border-transparent hover:border-gold transition-all hover:shadow-md"
+                    >
+                      <div className="font-semibold text-navy">{template.name}</div>
+                      <div className="text-sm text-muted-foreground">{template.description}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Search Conditions */}
-              <div className="p-6 space-y-4">
+              <div className="space-y-4">
                 {conditions.map((condition, index) => (
                   <div
                     key={condition.id}
-                    className="animate-slide-up bg-gray-50/50 rounded-2xl p-5 border border-border/30 hover:border-amber-300/50 transition-all"
+                    className="animate-slide-up bg-white rounded-xl p-4 border-2 border-border/50 hover:border-navy/30 transition-all"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3">
                       {/* Operator */}
                       {index > 0 ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <Select
                             value={condition.operator}
                             onValueChange={(value: ConditionOperator) =>
                               updateCondition(condition.id, { operator: value })
                             }
                           >
-                            <SelectTrigger className="w-28 bg-white rounded-xl font-semibold border border-border/50 shadow-sm">
+                            <SelectTrigger className="w-28 bg-secondary rounded-xl font-semibold border-2 border-navy/20">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-white border border-border/50 rounded-xl shadow-lg">
+                            <SelectContent className="bg-white border-2 border-navy/20 rounded-xl">
                               <SelectItem value="AND">וגם</SelectItem>
                               <SelectItem value="OR">או</SelectItem>
                               <SelectItem value="NOT">ללא</SelectItem>
@@ -617,11 +615,11 @@ const Index = () => {
                           </Select>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <button className="p-1.5 text-muted-foreground hover:text-amber-600 transition-colors">
+                              <button className="p-1 text-muted-foreground hover:text-navy transition-colors">
                                 <HelpCircle className="w-4 h-4" />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs text-right bg-foreground text-white p-3 rounded-xl">
+                            <TooltipContent side="top" className="max-w-xs text-right bg-navy text-white p-3 rounded-xl">
                               <div className="font-bold mb-1">{operatorHelp[condition.operator].label}</div>
                               <div className="text-sm opacity-90 mb-2">{operatorHelp[condition.operator].description}</div>
                               <div className="text-xs bg-white/10 p-2 rounded-lg">
@@ -631,16 +629,16 @@ const Index = () => {
                           </Tooltip>
                         </div>
                       ) : (
-                        <Badge variant="secondary" className="h-10 px-5 bg-amber-500 text-white font-semibold rounded-xl shadow-sm">
+                        <Badge variant="secondary" className="h-10 px-4 bg-navy text-white font-semibold rounded-xl">
                           חפש:
                         </Badge>
                       )}
 
                       {/* Input field */}
                       {condition.operator === 'LIST' && index > 0 ? (
-                        <div className="flex-1 space-y-4">
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border/30 flex-wrap">
-                            <List className="w-5 h-5 text-amber-600" />
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl flex-wrap">
+                            <List className="w-5 h-5 text-navy" />
                             <span className="text-sm text-muted-foreground font-medium">רשימת מילים (כל שורה = מילה אחת)</span>
                             <Select
                               value={condition.listMode || 'any'}
@@ -648,7 +646,7 @@ const Index = () => {
                                 updateCondition(condition.id, { listMode: value })
                               }
                             >
-                              <SelectTrigger className="w-32 bg-white rounded-xl border border-amber-300">
+                              <SelectTrigger className="w-32 bg-white rounded-xl border-2 border-gold/30">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-white rounded-xl">
@@ -662,7 +660,7 @@ const Index = () => {
                               value={condition.listWords?.join('\n') || ''}
                               onChange={(e) => handleListWordsChange(condition.id, e.target.value)}
                               placeholder="הכנס מילים (כל מילה בשורה נפרדת)..."
-                              className="flex-1 min-h-[100px] rounded-xl bg-white border border-border/50 focus:border-amber-400 text-right resize-none"
+                              className="flex-1 min-h-[100px] rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right resize-none"
                               dir="rtl"
                             />
                             <div className="flex flex-col gap-2">
@@ -678,14 +676,14 @@ const Index = () => {
                             </div>
                           </div>
                           {condition.listWords && condition.listWords.length > 0 && (
-                            <div className="flex flex-wrap gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <div className="flex flex-wrap gap-2 p-3 bg-gold/10 rounded-xl">
                               {condition.listWords.slice(0, 10).map((word, i) => (
-                                <Badge key={i} variant="secondary" className="bg-white text-foreground border border-amber-200">
+                                <Badge key={i} variant="secondary" className="bg-white text-navy">
                                   {word}
                                 </Badge>
                               ))}
                               {condition.listWords.length > 10 && (
-                                <Badge variant="outline" className="text-muted-foreground border-amber-200">
+                                <Badge variant="outline" className="text-muted-foreground">
                                   +{condition.listWords.length - 10} עוד
                                 </Badge>
                               )}
@@ -698,14 +696,14 @@ const Index = () => {
                           onChange={(e) => updateCondition(condition.id, { term: e.target.value })}
                           onKeyPress={handleKeyPress}
                           placeholder="הקלד מילה לחיפוש..."
-                          className="flex-1 text-lg h-12 rounded-xl bg-white border border-border/50 focus:border-amber-400 text-right shadow-sm"
+                          className="flex-1 text-lg h-12 rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right"
                           dir="rtl"
                         />
                       )}
 
                       {/* NEAR options */}
                       {condition.operator === 'NEAR' && (
-                        <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-border/30">
+                        <div className="flex items-center gap-2 p-2 bg-secondary/50 rounded-xl">
                           <span className="text-sm text-muted-foreground">בטווח</span>
                           <Input
                             type="number"
@@ -715,7 +713,7 @@ const Index = () => {
                             onChange={(e) =>
                               updateCondition(condition.id, { proximityRange: parseInt(e.target.value) || 10 })
                             }
-                            className="w-16 h-8 text-center rounded-lg border-amber-300"
+                            className="w-16 h-8 text-center rounded-lg"
                           />
                           <span className="text-sm text-muted-foreground">מילים</span>
                         </div>
@@ -746,11 +744,11 @@ const Index = () => {
 
               {/* Query preview */}
               {queryPreview && (
-                <div className="mx-6 mb-6 flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-200/50 animate-fade-in">
-                  <Eye className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex items-start gap-3 p-4 bg-navy/5 rounded-xl border border-navy/20 animate-fade-in">
+                  <Eye className="w-5 h-5 text-navy mt-0.5 shrink-0" />
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-foreground mb-1">תצוגה מקדימה של השאילתה:</div>
-                    <div className="text-base font-mono text-foreground bg-white px-3 py-2 rounded-lg inline-block border border-amber-100">
+                    <div className="text-sm font-semibold text-navy mb-1">תצוגה מקדימה של השאילתה:</div>
+                    <div className="text-base font-mono text-foreground bg-white px-3 py-2 rounded-lg inline-block">
                       {queryPreview}
                     </div>
                   </div>
@@ -760,26 +758,26 @@ const Index = () => {
 
             {/* Smart Search Section */}
             <Collapsible open={smartSearchOpen} onOpenChange={setSmartSearchOpen}>
-              <div className="bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="bg-gradient-to-br from-gold/10 to-gold/5 rounded-2xl border-2 border-gold/30 overflow-hidden">
                 <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50/50 transition-colors">
+                  <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-gold/5 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-md">
-                        <Sparkles className="w-6 h-6 text-white" />
+                      <div className="w-12 h-12 bg-gradient-to-br from-gold to-gold-dark rounded-xl flex items-center justify-center shadow-md">
+                        <Sparkles className="w-6 h-6 text-navy" />
                       </div>
                       <div className="text-right">
-                        <h3 className="font-bold text-lg text-foreground">חיפוש חכם</h3>
+                        <h3 className="font-bold text-lg text-navy">חיפוש חכם</h3>
                         <p className="text-sm text-muted-foreground">
                           {Object.values(smartOptions).filter(Boolean).length} כללים פעילים
                         </p>
                       </div>
                     </div>
-                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${smartSearchOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-5 h-5 text-navy transition-transform duration-200 ${smartSearchOpen ? 'rotate-180' : ''}`} />
                   </div>
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-5 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {smartSearchConfig.map((config) => {
                       const Icon = config.icon;
                       const isActive = smartOptions[config.key];
@@ -788,19 +786,19 @@ const Index = () => {
                         <Tooltip key={config.key}>
                           <TooltipTrigger asChild>
                             <div 
-                              className={`flex items-center justify-between p-4 rounded-2xl transition-all cursor-pointer ${
+                              className={`flex items-center justify-between p-4 rounded-xl transition-all cursor-pointer ${
                                 isActive 
-                                  ? 'bg-white border-2 border-amber-400 shadow-sm' 
-                                  : 'bg-gray-50/50 border-2 border-transparent hover:border-amber-200'
+                                  ? 'bg-white border-2 border-gold shadow-sm' 
+                                  : 'bg-white/50 border-2 border-transparent hover:border-gold/30'
                               }`}
                               onClick={() => setSmartOptions({ ...smartOptions, [config.key]: !isActive })}
                             >
                               <div className="flex items-center gap-3 text-right">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-amber-500 text-white' : 'bg-gray-100 text-muted-foreground'}`}>
-                                  <Icon className="w-5 h-5" />
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-gold text-navy' : 'bg-secondary text-muted-foreground'}`}>
+                                  <Icon className="w-4 h-4" />
                                 </div>
                                 <div>
-                                  <Label className={`font-medium text-base ${isActive ? 'text-foreground' : 'text-foreground'}`}>{config.label}</Label>
+                                  <Label className={`font-medium ${isActive ? 'text-navy' : 'text-foreground'}`}>{config.label}</Label>
                                   <p className="text-xs text-muted-foreground">{config.description}</p>
                                 </div>
                               </div>
@@ -808,11 +806,10 @@ const Index = () => {
                                 checked={isActive}
                                 onCheckedChange={(checked) => setSmartOptions({ ...smartOptions, [config.key]: checked })}
                                 onClick={(e) => e.stopPropagation()}
-                                className="data-[state=checked]:bg-amber-500"
                               />
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-foreground text-white p-3 rounded-xl max-w-xs text-right">
+                          <TooltipContent side="top" className="bg-navy text-white p-3 rounded-xl max-w-xs text-right">
                             <div className="font-bold mb-1">{config.label}</div>
                             <div className="text-sm opacity-90 mb-2">{config.description}</div>
                             <div className="text-xs bg-white/10 px-2 py-1 rounded-lg inline-block">
@@ -829,15 +826,15 @@ const Index = () => {
 
             {/* Filter Rules Section */}
             <Collapsible open={filterRulesOpen} onOpenChange={setFilterRulesOpen}>
-              <div className="bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="bg-gradient-to-br from-gold/5 to-navy/5 rounded-2xl border-2 border-gold/20 overflow-hidden">
                 <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50/50 transition-colors">
+                  <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-white/50 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-2xl flex items-center justify-center shadow-md">
+                      <div className="w-12 h-12 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-md">
                         <Filter className="w-6 h-6 text-white" />
                       </div>
                       <div className="text-right">
-                        <h3 className="font-bold text-lg text-foreground">כללי סינון מתקדמים</h3>
+                        <h3 className="font-bold text-lg text-navy">כללי סינון מתקדמים</h3>
                         <p className="text-sm text-muted-foreground">
                           מיקום מילים, לפני/אחרי, אורך שורה ועוד
                         </p>
@@ -845,17 +842,17 @@ const Index = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       {(filterRules.positionRules.length > 0 || filterRules.textPositionRules.length > 0) && (
-                        <span className="bg-amber-500 text-white text-sm font-semibold px-3 py-1 rounded-full">
+                        <span className="bg-gold text-navy text-sm font-semibold px-3 py-1 rounded-full">
                           {filterRules.positionRules.length + filterRules.textPositionRules.length} כללים
                         </span>
                       )}
-                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${filterRulesOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-5 h-5 text-navy transition-transform duration-200 ${filterRulesOpen ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <div className="px-6 pb-6 space-y-6">
+                  <div className="p-5 pt-0 space-y-6">
                     <FilterRulesBuilder
                       rules={filterRules}
                       onRulesChange={setFilterRules}
@@ -890,12 +887,12 @@ const Index = () => {
               <Button
                 onClick={performSearch}
                 size="lg"
-                className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-xl shadow-amber-500/30 transition-all duration-300 hover:scale-110 active:scale-95"
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-navy to-navy-light hover:from-gold hover:to-gold-dark text-white hover:text-navy shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95"
               >
                 <Search className="w-7 h-7" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="bg-foreground text-white rounded-xl font-semibold">
+            <TooltipContent side="right" className="bg-navy text-white rounded-xl font-semibold">
               חפש עכשיו
             </TooltipContent>
           </Tooltip>
@@ -906,16 +903,16 @@ const Index = () => {
           onClick={scrollToTop}
           variant="outline"
           size="icon"
-          className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full border-2 border-amber-400 bg-white/90 backdrop-blur-sm hover:bg-amber-50 text-amber-600 shadow-lg transition-all"
+          className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full border-2 border-gold bg-white/90 backdrop-blur-sm hover:bg-gold hover:text-navy shadow-lg transition-all"
         >
           <ArrowUp className="w-5 h-5" />
         </Button>
 
         {/* Footer */}
-        <footer className="bg-gradient-to-r from-slate-800 to-slate-900 border-t-4 border-amber-500 mt-12 py-8">
+        <footer className="bg-navy border-t-4 border-gold mt-12 py-6">
           <div className="container mx-auto px-6 text-center">
-            <p className="text-white font-medium text-lg">חיפוש חכם - ניתוח טקסטים מתקדם</p>
-            <p className="text-amber-400 text-sm mt-2">הנתונים נשמרים במחשב שלך 💾</p>
+            <p className="text-white font-medium">חיפוש חכם - ניתוח טקסטים מתקדם</p>
+            <p className="text-gold-light text-sm mt-1">הנתונים נשמרים במחשב שלך 💾</p>
           </div>
         </footer>
 
