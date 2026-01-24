@@ -6,27 +6,27 @@
 
 @layer base {
   :root {
-    /* Navy & Gold Theme */
-    --background: 220 30% 98%;
-    --foreground: 220 50% 15%;
+    /* Clean Modern Theme - Amber & White */
+    --background: 40 33% 98%;
+    --foreground: 220 15% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 50% 15%;
+    --card-foreground: 220 15% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 50% 15%;
+    --popover-foreground: 220 15% 20%;
 
-    --primary: 220 60% 25%;
-    --primary-foreground: 45 100% 96%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 30% 94%;
-    --secondary-foreground: 220 50% 20%;
+    --secondary: 40 20% 96%;
+    --secondary-foreground: 220 15% 25%;
 
-    --muted: 220 20% 96%;
-    --muted-foreground: 220 20% 45%;
+    --muted: 40 15% 95%;
+    --muted-foreground: 220 10% 50%;
 
-    --accent: 45 90% 55%;
-    --accent-foreground: 220 60% 15%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -37,18 +37,18 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 25% 88%;
-    --input: 220 25% 92%;
-    --ring: 220 60% 25%;
+    --border: 40 20% 90%;
+    --input: 40 20% 94%;
+    --ring: 38 92% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Custom colors */
-    --navy: 220 60% 20%;
-    --navy-light: 220 50% 30%;
-    --gold: 45 90% 55%;
-    --gold-light: 45 85% 70%;
-    --gold-dark: 40 80% 45%;
+    --navy: 220 30% 25%;
+    --navy-light: 220 25% 35%;
+    --gold: 38 92% 50%;
+    --gold-light: 45 90% 65%;
+    --gold-dark: 35 85% 42%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -56,8 +56,8 @@
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-border: 40 20% 92%;
+    --sidebar-ring: 38 92% 50%;
   }
 
   .dark {
