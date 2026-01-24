@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchConditionBuilder } from '@/components/SearchConditionBuilder';
 import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
 import { RulesValidationSystem } from '@/components/RulesValidationSystem';
+import { ActiveRulesPreview } from '@/components/ActiveRulesPreview';
 import { SettingsButton } from '@/components/SettingsButton';
 import { Wand2, Settings2, Filter } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
@@ -476,11 +477,14 @@ const Index = () => {
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <div className="p-5 pt-0">
+                <div className="p-5 pt-0 space-y-6">
                   <FilterRulesBuilder
                     rules={filterRules}
                     onRulesChange={setFilterRules}
                   />
+                  
+                  {/* Active Rules Preview with Examples */}
+                  <ActiveRulesPreview rules={filterRules} />
                 </div>
               </CollapsibleContent>
             </div>
