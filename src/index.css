@@ -196,11 +196,6 @@
     animation: pulseSoft 2s ease-in-out infinite;
   }
 
-  .floating-search-btn {
-    @apply fixed bottom-8 left-8 z-50;
-    animation: floatBounce 3s ease-in-out infinite;
-  }
-
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

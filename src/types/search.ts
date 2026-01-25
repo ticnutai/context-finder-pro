@@ -39,6 +39,13 @@ export interface FilterRules {
   caseSensitive: boolean;
 }
 
+export interface AdditionalPattern {
+  id: string;
+  patternType: PatternType;
+  customPattern: string;
+  logic: 'AND' | 'OR';
+}
+
 export interface SearchCondition {
   id: string;
   term: string;
@@ -51,6 +58,7 @@ export interface SearchCondition {
   patternType?: PatternType;  // סוג הדפוס לחיפוש
   customPattern?: string;  // דפוס מותאם אישית (regex)
   patternLogic?: 'AND' | 'OR';  // לוגיקה של דפוס ביחס לתנאים אחרים
+  additionalPatterns?: AdditionalPattern[];  // דפוסים נוספים באותו תנאי
 }
 
 export interface SearchResult {

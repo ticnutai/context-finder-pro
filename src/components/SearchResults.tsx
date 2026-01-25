@@ -102,7 +102,7 @@ export function SearchResults({ results, highlightedText, hasSearched, textRef, 
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-right" dir="rtl">
       {/* Results summary */}
       <div className={`glass-effect rounded-2xl p-5 flex items-center gap-4 flex-row-reverse ${
         results.length > 0 
@@ -136,8 +136,8 @@ export function SearchResults({ results, highlightedText, hasSearched, textRef, 
         <div className="space-y-4">
           {/* Text view with highlighted match - shown when result is clicked */}
           {showTextView && selectedResultIdx !== null && (
-            <div className="glass-effect rounded-2xl overflow-hidden animate-fade-in border-2 border-gold">
-              <div className="bg-gold px-5 py-4 flex items-center justify-between">
+            <div className="glass-effect rounded-2xl overflow-hidden animate-fade-in border border-gold">
+              <div className="bg-white border border-gold px-5 py-4 flex items-center justify-between">
                 <button 
                   onClick={() => setShowTextView(false)}
                   className="text-navy hover:text-navy/70 text-sm font-medium"
@@ -163,9 +163,9 @@ export function SearchResults({ results, highlightedText, hasSearched, textRef, 
           )}
 
           {/* Results List */}
-          <div className="glass-effect rounded-2xl overflow-hidden">
-            <div className="bg-navy px-5 py-4">
-              <h3 className="font-bold text-lg text-white text-right flex items-center gap-2 justify-end">
+          <div className="glass-effect rounded-2xl overflow-hidden border border-gold">
+            <div className="bg-white border border-gold px-5 py-4">
+              <h3 className="font-bold text-lg text-navy text-right flex items-center gap-2 justify-end">
                 <span>תוצאות ({results.length})</span>
                 <MapPin className="w-5 h-5 text-gold" />
               </h3>

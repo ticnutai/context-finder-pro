@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Header } from '@/components/Header';
 import { TextInput } from '@/components/TextInput';
 import { SearchResults } from '@/components/SearchResults';
@@ -12,7 +12,7 @@ import { RulesValidationSystem } from '@/components/RulesValidationSystem';
 import { ActiveRulesPreview } from '@/components/ActiveRulesPreview';
 import { SettingsButton } from '@/components/SettingsButton';
 import { TestingPanel } from '@/components/TestingPanel';
-import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex } from 'lucide-react';
+import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex, ChevronDown, ChevronUp } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -311,6 +311,38 @@ const Index = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Collapsible conditions state
+  const [collapsedConditions, setCollapsedConditions] = useState<Set<string>>(new Set());
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Draggable search button state
+  const [buttonPosition, setButtonPosition] = useState({ x: 32, y: typeof window !== 'undefined' ? window.innerHeight - 96 : 500 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Toggle condition collapse
+  const toggleConditionCollapse = (id: string) => {
+    setCollapsedConditions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const collapseAllConditions = () => {
+    setCollapsedConditions(new Set(conditions.map(c => c.id)));
+  };
+
+  const expandAllConditions = () => {
+    setCollapsedConditions(new Set());
+  };
+
   useEffect(() => {
     const savedText = loadText();
     const savedConditions = loadConditions();
@@ -430,6 +462,40 @@ const Index = () => {
       }
     }
   };
+
+  // Draggable button handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only enable dragging if Shift key is pressed
+    if (e.shiftKey) {
+      e.preventDefault();
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - buttonPosition.x, y: e.clientY - buttonPosition.y });
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      const newX = Math.max(16, Math.min(window.innerWidth - 80, e.clientX - dragStart.x));
+      const newY = Math.max(16, Math.min(window.innerHeight - 80, e.clientY - dragStart.y));
+      setButtonPosition({ x: newX, y: newY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
 
   const applyTemplate = (template: typeof searchTemplates[0]) => {
     const newConditions = template.conditions.map(c => ({
@@ -665,6 +731,11 @@ const Index = () => {
 
     const allMatchedTerms = foundResults.flatMap(r => r.matchedTerms);
     addToHistory(text, conditions, foundResults.length, allMatchedTerms);
+
+    // Scroll to results after search
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const highlightedText = useMemo(() => {
@@ -787,7 +858,7 @@ const Index = () => {
 
             {/* Tests Tab */}
             {activeTab === 'tests' && (
-              <div className="bg-white rounded-2xl p-6 animate-fade-in border-2 border-gold shadow-xl">
+              <div className="bg-white rounded-2xl p-6 animate-fade-in border border-gold shadow-xl text-right">
                 <TestingPanel />
               </div>
             )}
@@ -799,17 +870,19 @@ const Index = () => {
                 <TextInput text={text} onTextChange={setText} />
 
                 {/* Results - Right after text input */}
-                <SearchResults
-                  results={results}
-                  highlightedText={highlightedText}
-                  hasSearched={hasSearched}
-                  originalText={text}
-                />
+                <div ref={resultsRef}>
+                  <SearchResults
+                    results={results}
+                    highlightedText={highlightedText}
+                    hasSearched={hasSearched}
+                    originalText={text}
+                  />
+                </div>
 
                 {/* Unified Search Builder */}
-                <div className="bg-white rounded-2xl p-6 space-y-5 animate-fade-in border-2 border-gold shadow-xl">
+                <div className="bg-white rounded-2xl p-6 space-y-5 animate-fade-in border border-gold shadow-xl text-right">
                   {/* Header with buttons */}
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center justify-between gap-4 flex-wrap bg-white border border-gold rounded-xl p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gold rounded-2xl flex items-center justify-center shadow-lg">
                         <Search className="w-6 h-6 text-navy" />
@@ -821,6 +894,25 @@ const Index = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => {
+                          if (collapsedConditions.size === conditions.length) {
+                            expandAllConditions();
+                          } else {
+                            collapseAllConditions();
+                          }
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white border border-gold text-navy"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{collapsedConditions.size === conditions.length ? 'הרחב הכל' : 'מזער הכל'}</TooltipContent>
+                  </Tooltip>
                   <Button
                     onClick={() => setShowTemplates(!showTemplates)}
                     variant="secondary"
@@ -842,8 +934,8 @@ const Index = () => {
 
               {/* Search templates */}
               {showTemplates && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white rounded-2xl border-2 border-gold animate-fade-in shadow-md">
-                  <div className="col-span-full flex items-center gap-2 pb-3 border-b-2 border-gold">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white rounded-2xl border border-gold animate-fade-in shadow-md">
+                  <div className="col-span-full flex items-center gap-2 pb-3 border-b border-gold bg-white text-right">
                     <Sparkles className="w-5 h-5 text-gold" />
                     <span className="font-bold text-navy text-lg">תבניות חיפוש מוכנות</span>
                   </div>
@@ -851,7 +943,7 @@ const Index = () => {
                     <button
                       key={template.id}
                       onClick={() => applyTemplate(template)}
-                      className="text-right p-4 rounded-xl bg-white border-2 border-gold/50 hover:border-gold hover:bg-gold/5 transition-all hover:shadow-lg"
+                      className="text-right p-4 rounded-xl bg-white border border-gold hover:border-gold hover:bg-gold/5 transition-all hover:shadow-lg"
                     >
                       <div className="font-bold text-navy text-lg">{template.name}</div>
                       <div className="text-sm text-muted-foreground mt-1">{template.description}</div>
@@ -862,13 +954,52 @@ const Index = () => {
 
               {/* Search Conditions */}
               <div className="space-y-4">
-                {conditions.map((condition, index) => (
-                  <div
+                {conditions.map((condition, index) => {
+                  const isCollapsed = collapsedConditions.has(condition.id);
+                  const conditionSummary = condition.operator === 'LIST' 
+                    ? `רשימה (${condition.listWords?.length || 0} מילים)`
+                    : condition.operator === 'PATTERN'
+                    ? `דפוס: ${condition.patternType || 'לא נבחר'}`
+                    : condition.term || 'ריק';
+                  
+                  return (
+                  <Collapsible
                     key={condition.id}
-                    className="animate-slide-up bg-white rounded-2xl p-5 border-2 border-gold/40 hover:border-gold transition-all shadow-md hover:shadow-xl"
+                    open={!isCollapsed}
+                    onOpenChange={() => toggleConditionCollapse(condition.id)}
+                    className="animate-slide-up bg-white rounded-2xl border border-gold hover:border-gold transition-all shadow-md hover:shadow-xl overflow-hidden text-right"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="flex items-start gap-3">
+                    {/* Collapsible Header */}
+                    <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 p-4 hover:bg-gold/5 transition-colors text-right">
+                      <div className="flex items-center gap-3">
+                        {isCollapsed ? <ChevronDown className="w-3 h-3 text-navy" /> : <ChevronUp className="w-3 h-3 text-navy" />}
+                        <span className="font-semibold text-navy">תנאי {index + 1}</span>
+                        {isCollapsed && (
+                          <span className="text-sm text-muted-foreground bg-secondary/50 px-3 py-1 rounded-lg">
+                            {index > 0 && <span className="text-gold font-bold ml-2">{condition.operator}</span>}
+                            {conditionSummary}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {conditions.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCondition(condition.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </CollapsibleTrigger>
+
+                    {/* Collapsible Content */}
+                    <CollapsibleContent>
+                    <div className="p-5 pt-0 border-t border-gold/20">
+                    <div className="flex items-start gap-3 pt-4">
                       {/* Operator */}
                       {index > 0 ? (
                         <div className="flex items-center gap-1">
@@ -878,10 +1009,10 @@ const Index = () => {
                               updateCondition(condition.id, { operator: value })
                             }
                           >
-                            <SelectTrigger className="w-28 bg-secondary rounded-xl font-semibold border-2 border-navy/20">
+                            <SelectTrigger className="w-28 bg-secondary rounded-xl font-semibold border border-navy/20">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-white border-2 border-navy/20 rounded-xl">
+                            <SelectContent className="bg-white border border-navy/20 rounded-xl">
                               <SelectItem value="AND">וגם</SelectItem>
                               <SelectItem value="OR">או</SelectItem>
                               <SelectItem value="NOT">ללא</SelectItem>
@@ -913,10 +1044,10 @@ const Index = () => {
                               updateCondition(condition.id, { operator: value })
                             }
                           >
-                            <SelectTrigger className="w-28 bg-navy text-white rounded-xl font-semibold border-2 border-navy">
+                            <SelectTrigger className="w-28 bg-navy text-white rounded-xl font-semibold border border-navy">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-white border-2 border-navy/20 rounded-xl">
+                            <SelectContent className="bg-white border border-navy/20 rounded-xl">
                               <SelectItem value="AND">חפש</SelectItem>
                               <SelectItem value="LIST">רשימה</SelectItem>
                             </SelectContent>
@@ -959,7 +1090,7 @@ const Index = () => {
                                 updateCondition(condition.id, { listMode: value })
                               }
                             >
-                              <SelectTrigger className="w-32 bg-white rounded-xl border-2 border-gold/30">
+                              <SelectTrigger className="w-32 bg-white rounded-xl border border-gold/30">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-white rounded-xl">
@@ -981,7 +1112,7 @@ const Index = () => {
                                   }
                                 }}
                                 placeholder="הכנס מילים (כל מילה בשורה נפרדת)..."
-                                className="w-full min-h-[120px] rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right resize-none"
+                                className="w-full min-h-[120px] rounded-xl bg-secondary/30 border border-border focus:border-navy text-right resize-none"
                                 dir="rtl"
                               />
                             </div>
@@ -1048,7 +1179,7 @@ const Index = () => {
                                     updateCondition(condition.id, { patternLogic: value })
                                   }
                                 >
-                                  <SelectTrigger className="w-24 h-8 bg-white rounded-lg border-2 border-gold/30 text-sm">
+                                  <SelectTrigger className="w-24 h-8 bg-white rounded-lg border border-gold/30 text-sm">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="bg-white rounded-xl">
@@ -1068,7 +1199,7 @@ const Index = () => {
                                   customPattern: preset.pattern,
                                   term: preset.pattern
                                 })}
-                                className={`p-3 rounded-xl text-right transition-all border-2 ${
+                                className={`p-3 rounded-xl text-right transition-all border ${
                                   condition.patternType === preset.id
                                     ? 'border-gold bg-gold/10 text-navy'
                                     : 'border-border bg-white hover:border-gold/50'
@@ -1118,7 +1249,7 @@ const Index = () => {
                             onChange={(e) => updateCondition(condition.id, { term: e.target.value })}
                             onKeyPress={handleKeyPress}
                             placeholder="הקלד מילה לחיפוש..."
-                            className="w-full text-lg h-12 rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right"
+                            className="w-full text-lg h-12 rounded-xl bg-secondary/30 border border-border focus:border-navy text-right"
                             dir="rtl"
                           />
                           <div className="flex items-center gap-2 p-2 bg-secondary/30 rounded-xl">
@@ -1152,37 +1283,21 @@ const Index = () => {
                           <span className="text-sm text-muted-foreground">מילים</span>
                         </div>
                       )}
-
-                      {/* Remove button */}
-                      {conditions.length > 1 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeCondition(condition.id)}
-                              className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <X className="w-5 h-5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-destructive text-white rounded-lg">
-                            הסר תנאי
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  </CollapsibleContent>
+                  </Collapsible>
+                  );
+                })}
               </div>
 
               {/* Query preview */}
               {queryPreview && (
-                <div className="flex items-start gap-3 p-5 bg-white rounded-2xl border-2 border-gold animate-fade-in shadow-md">
+                <div className="flex items-start gap-3 p-5 bg-white rounded-2xl border border-gold animate-fade-in shadow-md text-right">
                   <Eye className="w-6 h-6 text-navy mt-0.5 shrink-0" />
                   <div className="text-right">
                     <div className="text-base font-bold text-navy mb-2">תצוגה מקדימה של השאילתה:</div>
-                    <div className="text-lg font-mono text-foreground bg-white px-4 py-3 rounded-xl inline-block border-2 border-gold shadow-sm">
+                    <div className="text-lg font-mono text-foreground bg-white px-4 py-3 rounded-xl inline-block border border-gold shadow-sm">
                       {queryPreview}
                     </div>
                   </div>
@@ -1194,7 +1309,7 @@ const Index = () => {
 
               {/* Smart Search Options - Integrated */}
               <div>
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-gold/30">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gold/30 bg-white text-right px-4 py-2 rounded-xl border border-gold">
                   <Sparkles className="w-5 h-5 text-gold" />
                   <h4 className="font-bold text-navy text-lg">חיפוש חכם</h4>
                 </div>
@@ -1209,8 +1324,8 @@ const Index = () => {
                           <div 
                             className={`flex items-center justify-between p-5 rounded-2xl transition-all cursor-pointer shadow-md ${
                               isActive 
-                                ? 'bg-white border-2 border-gold shadow-lg' 
-                                : 'bg-white border-2 border-gold/30 hover:border-gold/50 hover:shadow-lg'
+                                ? 'bg-white border border-gold shadow-lg' 
+                                : 'bg-white border border-gold/30 hover:border-gold/50 hover:shadow-lg'
                             }`}
                             onClick={() => setSmartOptions({ ...smartOptions, [config.key]: !isActive })}
                           >
@@ -1272,20 +1387,29 @@ const Index = () => {
           </div>
         </main>
 
-        {/* Floating Search Button */}
-        <div className="floating-search-btn">
+        {/* Floating Search Button - Draggable */}
+        <div 
+          className="fixed z-50"
+          style={{ 
+            left: buttonPosition.x, 
+            top: buttonPosition.y,
+            cursor: isDragging ? 'grabbing' : 'grab'
+          }}
+        >
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                onClick={performSearch}
+                ref={buttonRef}
+                onClick={() => !isDragging && performSearch()}
+                onMouseDown={handleMouseDown}
                 size="lg"
-                className="w-16 h-16 rounded-full bg-gold hover:bg-gold-dark text-navy shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 border-2 border-navy/10"
+                className={`w-16 h-16 rounded-full bg-gold hover:bg-gold-dark text-navy shadow-2xl border border-navy/10 ${isDragging ? 'scale-110 opacity-80' : ''}`}
               >
                 <Search className="w-7 h-7" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-navy text-white rounded-xl font-semibold px-4 py-2">
-              חפש עכשיו
+              {isDragging ? 'גרור לכל מקום' : 'חפש עכשיו (Shift + לחיצה לגרירה)'}
             </TooltipContent>
           </Tooltip>
         </div>
