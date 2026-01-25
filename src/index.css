@@ -1,63 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
-    /* Navy & Gold Theme */
-    --background: 220 30% 98%;
-    --foreground: 220 50% 15%;
+    /* Clean Navy & Gold Theme - White, Gold, Navy Blue Only */
+    --background: 0 0% 100%;
+    --foreground: 220 70% 22%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 50% 15%;
+    --card-foreground: 220 70% 22%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 50% 15%;
+    --popover-foreground: 220 70% 22%;
 
-    --primary: 220 60% 25%;
-    --primary-foreground: 45 100% 96%;
+    --primary: 220 70% 22%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 30% 94%;
-    --secondary-foreground: 220 50% 20%;
+    --secondary: 43 95% 58%;
+    --secondary-foreground: 220 70% 22%;
 
-    --muted: 220 20% 96%;
-    --muted-foreground: 220 20% 45%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 220 50% 45%;
 
-    --accent: 45 90% 55%;
-    --accent-foreground: 220 60% 15%;
+    --accent: 43 95% 58%;
+    --accent-foreground: 220 70% 22%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 220 70% 22%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 40%;
+    --success: 220 70% 22%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 43 95% 58%;
+    --warning-foreground: 220 70% 22%;
 
-    --border: 220 25% 88%;
-    --input: 220 25% 92%;
-    --ring: 220 60% 25%;
+    --border: 43 95% 58%;
+    --input: 0 0% 100%;
+    --ring: 43 95% 58%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Custom colors */
-    --navy: 220 60% 20%;
-    --navy-light: 220 50% 30%;
-    --gold: 45 90% 55%;
-    --gold-light: 45 85% 70%;
-    --gold-dark: 40 80% 45%;
+    /* Custom colors - Navy & Gold Only */
+    --navy: 220 70% 22%;
+    --navy-light: 220 60% 35%;
+    --gold: 43 95% 58%;
+    --gold-light: 43 90% 70%;
+    --gold-dark: 40 85% 48%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 70% 22%;
+    --sidebar-primary: 220 70% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 43 95% 58%;
+    --sidebar-accent-foreground: 220 70% 22%;
+    --sidebar-border: 43 95% 58%;
+    --sidebar-ring: 43 95% 58%;
   }
 
   .dark {
@@ -162,22 +162,22 @@
   }
 
   .glass-effect {
-    @apply bg-card border border-border shadow-sm;
+    @apply bg-white backdrop-blur-sm border-2 border-gold shadow-lg;
   }
 
   .highlight-match {
-    background-color: hsl(45 90% 75% / 0.8);
-    @apply rounded px-1 py-0.5 font-semibold transition-all duration-300;
+    background-color: hsl(43 95% 70% / 0.9);
+    @apply rounded-md px-1.5 py-0.5 font-bold transition-all duration-300 shadow-sm;
   }
 
   .highlight-match-secondary {
-    background-color: hsl(220 60% 80% / 0.6);
-    @apply rounded px-1 py-0.5 font-semibold transition-all duration-300;
+    background-color: hsl(220 70% 85% / 0.7);
+    @apply rounded-md px-1.5 py-0.5 font-semibold transition-all duration-300;
   }
 
   .highlight-match-tertiary {
-    background-color: hsl(142 60% 80% / 0.6);
-    @apply rounded px-1 py-0.5 font-semibold transition-all duration-300;
+    background-color: hsl(43 90% 80% / 0.7);
+    @apply rounded-md px-1.5 py-0.5 font-semibold transition-all duration-300;
   }
 
   .touch-target {

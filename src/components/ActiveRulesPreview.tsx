@@ -231,36 +231,21 @@ export function ActiveRulesPreview({ rules }: ActiveRulesPreviewProps) {
     }
   };
 
-  const getRuleColor = (ruleType: string) => {
-    switch (ruleType) {
-      case 'position':
-        return 'from-blue-500 to-green-500';
-      case 'textPosition':
-        return 'from-gold to-navy';
-      case 'wordCount':
-        return 'from-purple-500 to-pink-500';
-      case 'content':
-        return 'from-orange-500 to-red-500';
-      default:
-        return 'from-gray-500 to-gray-600';
-    }
-  };
-
   return (
     <div className="glass-effect rounded-2xl p-6 animate-fade-in" dir="rtl">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+        <div className="w-12 h-12 bg-gold rounded-xl flex items-center justify-center shadow-lg">
           <Eye className="w-6 h-6 text-white" />
         </div>
         <div className="text-right">
           <h2 className="text-xl font-bold text-navy flex items-center gap-2">
             תצוגה מקדימה של כללים פעילים
-            <Badge className="bg-emerald-500 text-white px-3 py-1 rounded-lg">
+            <Badge className="bg-gold text-white px-3 py-1 rounded-lg">
               {activeRulesCount} כללים
             </Badge>
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-navy/60">
             ראה דוגמאות לטקסטים שיתאימו או לא יתאימו לכללים
           </p>
         </div>
@@ -271,13 +256,13 @@ export function ActiveRulesPreview({ rules }: ActiveRulesPreviewProps) {
         {examples.map((ruleGroup, index) => (
           <div 
             key={index}
-            className="bg-white rounded-xl border-2 border-border/50 overflow-hidden shadow-sm animate-scale-in"
+            className="bg-white rounded-xl border-2 border-gold/20 overflow-hidden shadow-sm animate-scale-in"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             {/* Rule Header */}
-            <div className={`bg-gradient-to-l ${getRuleColor(ruleGroup.ruleType)} p-4`}>
+            <div className="bg-gold p-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white">
                   {getRuleIcon(ruleGroup.ruleType)}
                 </div>
                 <span className="font-bold text-white text-lg">{ruleGroup.rule}</span>
@@ -291,12 +276,12 @@ export function ActiveRulesPreview({ rules }: ActiveRulesPreviewProps) {
                   key={exIndex}
                   className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${
                     example.matches 
-                      ? 'bg-emerald-50 border-emerald-200 hover:border-emerald-300' 
-                      : 'bg-red-50 border-red-200 hover:border-red-300'
+                      ? 'bg-gold/5 border-gold/30 hover:border-gold' 
+                      : 'bg-navy/5 border-navy/30 hover:border-navy'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    example.matches ? 'bg-emerald-500' : 'bg-red-500'
+                    example.matches ? 'bg-gold' : 'bg-navy'
                   }`}>
                     {example.matches 
                       ? <CheckCircle className="w-5 h-5 text-white" />
@@ -305,16 +290,16 @@ export function ActiveRulesPreview({ rules }: ActiveRulesPreviewProps) {
                   </div>
                   <div className="flex-1 text-right">
                     <div className={`font-semibold text-base mb-1 ${
-                      example.matches ? 'text-emerald-800' : 'text-red-800'
+                      example.matches ? 'text-gold' : 'text-navy'
                     }`}>
                       {example.matches ? 'יתאים ✓' : 'לא יתאים ✗'}
                     </div>
-                    <div className="bg-white/80 p-3 rounded-lg border border-gray-200 mb-2">
+                    <div className="bg-white p-3 rounded-lg border border-gold/20 mb-2">
                       <code className="text-sm text-navy font-medium" dir="rtl">
                         "{example.text}"
                       </code>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-navy/60">
                       {example.explanation}
                     </p>
                   </div>
@@ -326,7 +311,7 @@ export function ActiveRulesPreview({ rules }: ActiveRulesPreviewProps) {
       </div>
 
       {/* Summary */}
-      <div className="mt-6 p-4 bg-gradient-to-l from-navy/5 to-gold/5 rounded-xl border-2 border-gold/20">
+      <div className="mt-6 p-4 bg-gold/10 rounded-xl border-2 border-gold/20">
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-gold" />
           <span className="text-navy font-medium">

@@ -1,5 +1,5 @@
-import { useRef, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, MapPin, ChevronLeft } from 'lucide-react';
+import { useRef, useCallback, useState, useMemo } from 'react';
+import { CheckCircle2, AlertCircle, MapPin, ChevronLeft, Eye } from 'lucide-react';
 import { SearchResult } from '@/types/search';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,36 +9,81 @@ interface SearchResultsProps {
   highlightedText: string;
   hasSearched: boolean;
   textRef?: React.RefObject<HTMLDivElement>;
+  originalText?: string;
 }
 
-export function SearchResults({ results, highlightedText, hasSearched, textRef }: SearchResultsProps) {
+export function SearchResults({ results, highlightedText, hasSearched, textRef, originalText = '' }: SearchResultsProps) {
   const highlightedTextRef = useRef<HTMLDivElement>(null);
+  const [selectedResultIdx, setSelectedResultIdx] = useState<number | null>(null);
+  const [showTextView, setShowTextView] = useState<boolean>(false);
 
-  const scrollToMatch = useCallback((startIndex: number, matchedTerm: string) => {
+  // Create highlighted version of original text with selected match emphasized
+  const textWithHighlight = useMemo(() => {
+    if (selectedResultIdx === null || !originalText || !results[selectedResultIdx]) {
+      return originalText;
+    }
+    
+    const result = results[selectedResultIdx];
+    const matchedTerm = result.matchedTerms[0];
+    if (!matchedTerm) return originalText;
+    
+    // Highlight the matched term in the original text
+    const regex = new RegExp(`(${matchedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+    return originalText.replace(regex, '<mark class="bg-gold text-navy px-1 rounded font-bold">$1</mark>');
+  }, [selectedResultIdx, originalText, results]);
+
+  const scrollToMatch = useCallback((resultIndex: number, startIndex: number, matchedTerms: string[]) => {
+    setSelectedResultIdx(resultIndex);
+    setShowTextView(true); // Show text view when clicking a result
+    
     const container = highlightedTextRef.current;
     if (!container) return;
 
-    // Find all mark elements and locate the one closest to the startIndex
+    // Find all mark elements
     const marks = container.querySelectorAll('mark');
     let targetMark: Element | null = null;
+    let matchCount = 0;
     
-    // Find the mark that contains the matched term
+    // Find the specific mark by counting matches
     for (const mark of marks) {
-      if (mark.textContent?.includes(matchedTerm)) {
-        targetMark = mark;
-        break;
+      const markText = mark.textContent?.trim() || '';
+      if (matchedTerms.some(term => markText === term || markText.includes(term) || term.includes(markText))) {
+        if (matchCount === resultIndex) {
+          targetMark = mark;
+          break;
+        }
+        matchCount++;
       }
     }
 
+    // If found, scroll and highlight
     if (targetMark) {
-      // Add a temporary highlight effect
-      targetMark.classList.add('ring-4', 'ring-accent', 'ring-offset-2');
+      // Remove previous highlights
+      container.querySelectorAll('.active-highlight').forEach(el => {
+        el.classList.remove('active-highlight');
+        (el as HTMLElement).style.backgroundColor = '';
+        (el as HTMLElement).style.boxShadow = '';
+        (el as HTMLElement).style.transform = '';
+      });
+      
+      // Add highlight to target with strong visual effect
+      targetMark.classList.add('active-highlight');
+      (targetMark as HTMLElement).style.backgroundColor = '#D4AF37';
+      (targetMark as HTMLElement).style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.4)';
+      (targetMark as HTMLElement).style.transform = 'scale(1.1)';
+      (targetMark as HTMLElement).style.transition = 'all 0.3s ease';
+      (targetMark as HTMLElement).style.borderRadius = '4px';
+      (targetMark as HTMLElement).style.padding = '2px 4px';
+      
       targetMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Remove the ring after animation
+      // Remove the glow after animation but keep highlighted
       setTimeout(() => {
-        targetMark?.classList.remove('ring-4', 'ring-accent', 'ring-offset-2');
-      }, 2000);
+        if (targetMark) {
+          (targetMark as HTMLElement).style.boxShadow = '0 0 0 2px rgba(212, 175, 55, 0.4)';
+          (targetMark as HTMLElement).style.transform = '';
+        }
+      }, 3000);
     }
   }, []);
 
@@ -88,67 +133,71 @@ export function SearchResults({ results, highlightedText, hasSearched, textRef }
       </div>
 
       {results.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Results Summary List */}
+        <div className="space-y-4">
+          {/* Text view with highlighted match - shown when result is clicked */}
+          {showTextView && selectedResultIdx !== null && (
+            <div className="glass-effect rounded-2xl overflow-hidden animate-fade-in border-2 border-gold">
+              <div className="bg-gold px-5 py-4 flex items-center justify-between">
+                <button 
+                  onClick={() => setShowTextView(false)}
+                  className="text-navy hover:text-navy/70 text-sm font-medium"
+                >
+                  ✕ סגור
+                </button>
+                <h3 className="font-bold text-lg text-navy text-right flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  מיקום בטקסט: "{results[selectedResultIdx]?.matchedTerms[0]}"
+                </h3>
+              </div>
+              <ScrollArea className="h-[300px]">
+                <div className="p-5">
+                  <div
+                    ref={highlightedTextRef}
+                    className="text-foreground leading-loose whitespace-pre-wrap text-base text-right"
+                    dir="rtl"
+                    dangerouslySetInnerHTML={{ __html: textWithHighlight }}
+                  />
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
+          {/* Results List */}
           <div className="glass-effect rounded-2xl overflow-hidden">
             <div className="bg-navy px-5 py-4">
               <h3 className="font-bold text-lg text-white text-right flex items-center gap-2 justify-end">
-                <span>סיכום תוצאות ({results.length})</span>
+                <span>תוצאות ({results.length})</span>
                 <MapPin className="w-5 h-5 text-gold" />
               </h3>
             </div>
-            <ScrollArea className="h-[400px]">
-              <div className="p-4 space-y-3">
+            <ScrollArea className="h-[300px]">
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {results.map((result, idx) => (
                   <button
                     key={idx}
-                    onClick={() => scrollToMatch(result.startIndex, result.matchedTerms[0])}
-                    className="w-full text-right p-4 bg-secondary/30 hover:bg-gold/10 rounded-xl border border-border hover:border-gold transition-all group animate-slide-up"
-                    style={{ animationDelay: `${idx * 50}ms` }}
+                    onClick={() => scrollToMatch(idx, result.startIndex, result.matchedTerms)}
+                    className={`text-right p-4 rounded-xl border transition-all group animate-slide-up ${
+                      selectedResultIdx === idx
+                        ? 'bg-gold/20 border-gold shadow-lg ring-2 ring-gold'
+                        : 'bg-secondary/30 hover:bg-gold/10 border-border hover:border-gold'
+                    }`}
+                    style={{ animationDelay: `${idx * 30}ms` }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-gold transition-colors mt-1 shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-foreground text-sm leading-relaxed line-clamp-2 mb-2" dir="rtl">
-                          {result.text.substring(0, 100)}
-                          {result.text.length > 100 && '...'}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5 justify-end">
-                          {result.matchedTerms.slice(0, 3).map((term, termIdx) => (
-                            <Badge 
-                              key={termIdx} 
-                              className="bg-gold/20 text-navy border border-gold/30 font-medium text-xs"
-                            >
-                              {term}
-                            </Badge>
-                          ))}
-                          {result.matchedTerms.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{result.matchedTerms.length - 3}
-                            </Badge>
-                          )}
-                        </div>
+                    <div className="flex flex-col gap-2">
+                      {/* Show matched term prominently */}
+                      <div className="flex items-center gap-2 justify-between">
+                        <ChevronLeft className="w-4 h-4 text-muted-foreground group-hover:text-gold transition-colors shrink-0" />
+                        <Badge className="bg-gold text-navy font-bold text-sm px-3 py-1">
+                          {result.matchedTerms[0]}
+                        </Badge>
                       </div>
+                      <p className="text-foreground text-xs leading-relaxed line-clamp-2" dir="rtl">
+                        ...{result.text.substring(0, 60)}...
+                      </p>
+                      <span className="text-xs text-muted-foreground">מיקום: {result.startIndex}</span>
                     </div>
                   </button>
                 ))}
-              </div>
-            </ScrollArea>
-          </div>
-
-          {/* Highlighted text */}
-          <div className="glass-effect rounded-2xl overflow-hidden">
-            <div className="bg-gold px-5 py-4">
-              <h3 className="font-bold text-lg text-navy text-right">טקסט עם הדגשות</h3>
-            </div>
-            <ScrollArea className="h-[400px]">
-              <div className="p-5">
-                <div
-                  ref={highlightedTextRef}
-                  className="text-foreground leading-loose whitespace-pre-wrap text-base text-right"
-                  dir="rtl"
-                  dangerouslySetInnerHTML={{ __html: highlightedText }}
-                />
               </div>
             </ScrollArea>
           </div>

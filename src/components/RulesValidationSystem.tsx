@@ -361,9 +361,9 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
     rules.mustContainLettersOnly;
 
   const getSuccessColor = (rate: number) => {
-    if (rate >= 90) return 'bg-green-500';
-    if (rate >= 70) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (rate >= 90) return 'bg-gold';
+    if (rate >= 70) return 'bg-gold/70';
+    return 'bg-navy';
   };
 
   const getRuleTypeLabel = (type: string) => {
@@ -382,12 +382,12 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 bg-gold rounded-xl flex items-center justify-center shadow-lg">
             <Beaker className="w-6 h-6 text-white" />
           </div>
           <div className="text-right">
             <h2 className="text-xl font-bold text-navy">מערכת וידוא ובדיקה</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-navy/60">
               בדיקה אוטומטית של כל הכללים והפונקציות
             </p>
           </div>
@@ -399,7 +399,7 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
               variant="outline"
               size="sm"
               onClick={() => setReport(null)}
-              className="gap-2 rounded-xl"
+              className="gap-2 rounded-xl border-gold/30 text-navy hover:bg-gold/10"
             >
               <RotateCcw className="w-4 h-4" />
               אפס
@@ -408,7 +408,7 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
           <Button
             onClick={runValidation}
             disabled={!hasAnyRules || isRunning}
-            className="gap-2 bg-gradient-to-l from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl px-6 h-12 shadow-md"
+            className="gap-2 bg-gold hover:bg-gold/90 text-white rounded-xl px-6 h-12 shadow-md"
           >
             {isRunning ? (
               <>
@@ -427,10 +427,10 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
 
       {/* No Rules Message */}
       {!hasAnyRules && (
-        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center">
-          <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
-          <h3 className="font-bold text-lg text-yellow-800 mb-2">אין כללים להבדיקה</h3>
-          <p className="text-yellow-700">
+        <div className="bg-gold/10 border-2 border-gold/30 rounded-2xl p-6 text-center">
+          <AlertTriangle className="w-12 h-12 text-gold mx-auto mb-3" />
+          <h3 className="font-bold text-lg text-navy mb-2">אין כללים להבדיקה</h3>
+          <p className="text-navy/70">
             הוסף כללי סינון כדי להפעיל את מערכת הוידוא
           </p>
         </div>
@@ -441,30 +441,30 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
         <div className="space-y-6 animate-fade-in">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-navy/10 to-navy/5 rounded-2xl p-5 text-center border-2 border-navy/20">
+            <div className="bg-white rounded-2xl p-5 text-center border-2 border-navy/20">
               <div className="text-3xl font-bold text-navy">{report.totalTests}</div>
-              <div className="text-sm text-muted-foreground mt-1">סה"כ בדיקות</div>
+              <div className="text-sm text-navy/60 mt-1">סה"כ בדיקות</div>
             </div>
             
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 text-center border-2 border-green-200">
-              <div className="flex items-center justify-center gap-2 text-3xl font-bold text-green-600">
+            <div className="bg-white rounded-2xl p-5 text-center border-2 border-gold/30">
+              <div className="flex items-center justify-center gap-2 text-3xl font-bold text-gold">
                 <CheckCircle2 className="w-7 h-7" />
                 {report.passed}
               </div>
-              <div className="text-sm text-green-700 mt-1">עברו</div>
+              <div className="text-sm text-gold mt-1">עברו</div>
             </div>
             
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 text-center border-2 border-red-200">
-              <div className="flex items-center justify-center gap-2 text-3xl font-bold text-red-600">
+            <div className="bg-white rounded-2xl p-5 text-center border-2 border-navy/30">
+              <div className="flex items-center justify-center gap-2 text-3xl font-bold text-navy">
                 <XCircle className="w-7 h-7" />
                 {report.failed}
               </div>
-              <div className="text-sm text-red-700 mt-1">נכשלו</div>
+              <div className="text-sm text-navy mt-1">נכשלו</div>
             </div>
             
-            <div className="bg-gradient-to-br from-gold/20 to-gold/10 rounded-2xl p-5 text-center border-2 border-gold/30">
+            <div className="bg-gold/10 rounded-2xl p-5 text-center border-2 border-gold/30">
               <div className="text-3xl font-bold text-navy">{report.successRate.toFixed(0)}%</div>
-              <div className="text-sm text-muted-foreground mt-1">אחוז הצלחה</div>
+              <div className="text-sm text-navy/60 mt-1">אחוז הצלחה</div>
             </div>
           </div>
 
@@ -472,11 +472,11 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-navy">התקדמות הבדיקות</span>
-              <span className="text-muted-foreground">
+              <span className="text-navy/60">
                 {report.passed} מתוך {report.totalTests} עברו
               </span>
             </div>
-            <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-4 bg-white border border-gold/30 rounded-full overflow-hidden">
               <div 
                 className={`h-full transition-all duration-500 ${getSuccessColor(report.successRate)}`}
                 style={{ width: `${report.successRate}%` }}
@@ -487,7 +487,7 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
           {/* Detailed Results */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-4">
-              <ClipboardCheck className="w-5 h-5 text-navy" />
+              <ClipboardCheck className="w-5 h-5 text-gold" />
               <h3 className="font-bold text-lg text-navy">דוח מפורט</h3>
             </div>
             
@@ -506,19 +506,19 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
                       <div 
                         className={`rounded-xl border-2 overflow-hidden transition-all ${
                           result.passed 
-                            ? 'bg-green-50/50 border-green-200 hover:border-green-300' 
-                            : 'bg-red-50/50 border-red-200 hover:border-red-300'
+                            ? 'bg-gold/5 border-gold/30 hover:border-gold' 
+                            : 'bg-navy/5 border-navy/30 hover:border-navy'
                         }`}
                       >
                         <CollapsibleTrigger className="w-full">
                           <div className="flex items-center gap-4 p-4 cursor-pointer">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                              result.passed ? 'bg-green-100' : 'bg-red-100'
+                              result.passed ? 'bg-gold/20' : 'bg-navy/20'
                             }`}>
                               {result.passed ? (
-                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                <CheckCircle2 className="w-5 h-5 text-gold" />
                               ) : (
-                                <XCircle className="w-5 h-5 text-red-600" />
+                                <XCircle className="w-5 h-5 text-navy" />
                               )}
                             </div>
                             
@@ -530,13 +530,13 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
                                 <Badge 
                                   variant="secondary" 
                                   className={`text-xs ${
-                                    result.passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    result.passed ? 'bg-gold/20 text-navy' : 'bg-navy/20 text-navy'
                                   }`}
                                 >
                                   {getRuleTypeLabel(result.testCase.ruleType)}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground mt-1">
+                              <p className="text-sm text-navy/60 mt-1">
                                 {result.testCase.description}
                               </p>
                             </div>
@@ -546,26 +546,26 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
                         </CollapsibleTrigger>
                         
                         <CollapsibleContent>
-                          <div className={`p-4 pt-0 space-y-4 ${result.passed ? 'bg-green-50' : 'bg-red-50'}`}>
+                          <div className={`p-4 pt-0 space-y-4 ${result.passed ? 'bg-gold/5' : 'bg-navy/5'}`}>
                             {/* Explanation */}
                             <div className={`flex items-start gap-3 p-4 rounded-xl ${
-                              result.passed ? 'bg-green-100/50' : 'bg-red-100/50'
+                              result.passed ? 'bg-gold/10' : 'bg-navy/10'
                             }`}>
-                              <Info className={`w-5 h-5 mt-0.5 ${result.passed ? 'text-green-600' : 'text-red-600'}`} />
+                              <Info className={`w-5 h-5 mt-0.5 ${result.passed ? 'text-gold' : 'text-navy'}`} />
                               <div>
-                                <div className={`font-semibold ${result.passed ? 'text-green-700' : 'text-red-700'}`}>
+                                <div className={`font-semibold ${result.passed ? 'text-gold' : 'text-navy'}`}>
                                   {result.explanation}
                                 </div>
                               </div>
                             </div>
                             
                             {/* Test Text Preview */}
-                            <div className="bg-white rounded-xl p-4 border border-gray-200">
+                            <div className="bg-white rounded-xl p-4 border border-gold/20">
                               <div className="flex items-center gap-2 mb-2">
-                                <Eye className="w-4 h-4 text-navy" />
+                                <Eye className="w-4 h-4 text-gold" />
                                 <span className="text-sm font-semibold text-navy">טקסט הבדיקה:</span>
                               </div>
-                              <div className="text-sm bg-gray-50 rounded-lg p-3 font-mono text-gray-700 break-words">
+                              <div className="text-sm bg-white rounded-lg p-3 font-mono text-navy/70 break-words border border-gold/10">
                                 "{result.testCase.testText}"
                               </div>
                             </div>
@@ -573,13 +573,13 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
                             {/* Details List */}
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-navy" />
+                                <FileText className="w-4 h-4 text-gold" />
                                 <span className="text-sm font-semibold text-navy">פרטים:</span>
                               </div>
                               <ul className="space-y-1.5 mr-6">
                                 {result.details.map((detail, idx) => (
-                                  <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                                    <span className="text-navy">•</span>
+                                  <li key={idx} className="text-sm text-navy/60 flex items-start gap-2">
+                                    <span className="text-gold">•</span>
                                     {detail}
                                   </li>
                                 ))}
@@ -596,9 +596,9 @@ export function RulesValidationSystem({ rules, checkFilterRules }: RulesValidati
           </div>
 
           {/* Timestamp */}
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-4 border-t">
-            <Sparkles className="w-4 h-4" />
-            <span>הדוח נוצר ב: {report.timestamp.toLocaleString('he-IL')}</span>
+          <div className="flex items-center justify-center gap-2 text-sm text-navy/60 pt-4 border-t border-gold/20">
+            <Sparkles className="w-4 h-4 text-gold" />
+            <span>נוצר ב-{report.timestamp.toLocaleTimeString('he-IL')}</span>
           </div>
         </div>
       )}

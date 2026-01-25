@@ -5,13 +5,14 @@ import { SearchResults } from '@/components/SearchResults';
 import { SearchHistory } from '@/components/SearchHistory';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useWordLists } from '@/hooks/useWordLists';
-import { SearchCondition, SearchResult, SmartSearchOptions, FilterRules, ConditionOperator, ProximityDirection, ListMode } from '@/types/search';
+import { SearchCondition, SearchResult, SmartSearchOptions, FilterRules, ConditionOperator, ProximityDirection, ListMode, PatternType } from '@/types/search';
 import { useToast } from '@/hooks/use-toast';
 import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
 import { RulesValidationSystem } from '@/components/RulesValidationSystem';
 import { ActiveRulesPreview } from '@/components/ActiveRulesPreview';
 import { SettingsButton } from '@/components/SettingsButton';
-import { Search, Plus, X, Filter, Sparkles, ChevronDown, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, Zap, ArrowUp } from 'lucide-react';
+import { TestingPanel } from '@/components/TestingPanel';
+import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -88,7 +89,128 @@ const operatorHelp: Record<ConditionOperator, { label: string; description: stri
     description: 'חפש אחת או כל המילים מרשימה',
     example: 'רשימה של שמות → ימצא כל שם מהרשימה',
   },
+  PATTERN: {
+    label: 'דפוס',
+    description: 'חפש לפי תבנית/דפוס קבוע',
+    example: 'דפוס תלמודי: לא,א או קכג,ב',
+  },
 };
+
+// דפוסים מוכנים לחיפוש
+// רשימת כל מסכתות הש"ס
+const masechotList = [
+  // סדר זרעים
+  'ברכות',
+  // סדר מועד
+  'שבת', 'עירובין', 'פסחים', 'שקלים', 'יומא', 'סוכה', 'ביצה', 'ראש השנה', 'תענית', 'מגילה', 'מועד קטן', 'חגיגה',
+  // סדר נשים
+  'יבמות', 'כתובות', 'נדרים', 'נזיר', 'סוטה', 'גיטין', 'קידושין',
+  // סדר נזיקין
+  'בבא קמא', 'בבא מציעא', 'בבא בתרא', 'סנהדרין', 'מכות', 'שבועות', 'עבודה זרה', 'הוריות',
+  // סדר קדשים
+  'זבחים', 'מנחות', 'חולין', 'בכורות', 'ערכין', 'תמורה', 'כריתות', 'מעילה', 'תמיד', 'מדות', 'קינים',
+  // סדר טהרות
+  'נדה',
+];
+
+// ראשי תיבות של מסכתות - רשימה מלאה
+const masechotAbbreviations = [
+  // בבות
+  'ב"ק', 'בב"ק', 'ב״ק',      // בבא קמא
+  'ב"מ', 'בב"מ', 'ב״מ',      // בבא מציעא
+  'ב"ב', 'בב"ב', 'ב״ב',      // בבא בתרא
+  // מועד
+  'ר"ה', 'ר״ה',              // ראש השנה
+  'מו"ק', 'מ"ק', 'מו״ק',     // מועד קטן
+  'ע"ז', 'א"ז', 'ע״ז',       // עבודה זרה
+  // נשים
+  'קיד\'', 'קידו\'',         // קידושין
+  // אחרים
+  'שבו\'', 'שבוע\'',         // שבועות
+  'סנה\'', 'סנהד\'',         // סנהדרין
+  'גיט\'',                    // גיטין
+  'כתו\'', 'כתוב\'',         // כתובות
+  'יבמ\'', 'יבמו\'',         // יבמות
+  'פסח\'', 'פסחי\'',         // פסחים
+  'עירו\'',                   // עירובין
+  'זבח\'', 'זבחי\'',         // זבחים
+  'מנח\'', 'מנחו\'',         // מנחות
+  'חול\'', 'חולי\'',         // חולין
+  'בכור\'', 'בכורו\'',       // בכורות
+  'ערכי\'',                   // ערכין
+  'כריתו\'', 'כרית\'',       // כריתות
+  'מעיל\'',                   // מעילה
+  'נדרי\'',                   // נדרים
+];
+
+// דפוס regex לכל המסכתות כולל ראשי תיבות
+const masechotPattern = [...masechotList, ...masechotAbbreviations].join('|');
+
+const patternPresets = [
+  {
+    id: 'talmud-ref',
+    name: 'מראה מקום תלמודי',
+    description: 'כז,א / קכ,א / קכא,ב',
+    pattern: '[א-ת]{2,4},[אב]',
+    example: 'בבא בתרא קכא,א או כז,א',
+  },
+  {
+    id: 'talmud-full',
+    name: 'מסכת + דף + עמוד',
+    description: 'מסכת שבת כז,א / ב"מ כז,א',
+    pattern: `(מסכת |מס' |מס\\. )?(${masechotPattern}) ?[א-ת]{1,4},[אב]`,
+    example: 'מסכת בבא בתרא קכא,א / ב"מ כז,א',
+  },
+  {
+    id: 'masechet-name',
+    name: 'שם מסכת בלבד',
+    description: 'זיהוי שם מסכת מלא או ר"ת',
+    pattern: `(${masechotPattern})`,
+    example: 'בבא קמא, ב"ק, ב"מ, ר"ה, מו"ק',
+  },
+  {
+    id: 'sefer-ref',
+    name: 'ספר + פרק + פסוק',
+    description: 'בראשית א,ב',
+    pattern: '(בראשית|שמות|ויקרא|במדבר|דברים|יהושע|שופטים|שמואל|מלכים|ישעיהו|ירמיהו|יחזקאל|תהלים|משלי|איוב|שיר השירים|רות|איכה|קהלת|אסתר|דניאל|עזרא|נחמיה|דברי הימים) [א-ת]{1,3},[א-ת]{1,3}',
+    example: 'בראשית א,א',
+  },
+  {
+    id: 'daf-amud',
+    name: 'דף + עמוד',
+    description: 'דף כז עמוד א',
+    pattern: 'דף [א-ת]{1,4} עמוד [אב]',
+    example: 'דף קכא עמוד ב',
+  },
+  {
+    id: 'perek-mishna',
+    name: 'פרק ומשנה',
+    description: 'פ"א מ"ב',
+    pattern: 'פ"[א-ת] מ"[א-ת]',
+    example: 'אבות פ"א מ"ב',
+  },
+  {
+    id: 'brackets-ref',
+    name: 'מקור בסוגריים',
+    description: '(כח,א) / (קכא,ב)',
+    pattern: '\\([א-ת]{1,4},[אב]',
+    example: '(כח,א בעמה"ר)',
+  },
+  {
+    id: 'daf-number',
+    name: 'דף עם מספר',
+    description: 'דף 5 / דף 123',
+    pattern: 'דף \\d{1,3}',
+    example: 'דף 25 עמוד א',
+  },
+  {
+    id: 'custom',
+    name: 'דפוס מותאם אישית',
+    description: 'כתוב regex משלך',
+    pattern: '',
+    example: '',
+  },
+];
 
 // הגדרות חיפוש חכם
 const smartSearchConfig = [
@@ -183,8 +305,7 @@ const Index = () => {
   });
 
   const [showTemplates, setShowTemplates] = useState(false);
-  const [smartSearchOpen, setSmartSearchOpen] = useState(true);
-  const [filterRulesOpen, setFilterRulesOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'search' | 'tests'>('search');
   
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -298,8 +419,8 @@ const Index = () => {
   };
 
   const handleListWordsChange = (id: string, text: string) => {
-    const words = text.split('\n').filter(w => w.trim());
-    updateCondition(id, { listWords: words, term: words.join(' | ') });
+    const words = text.split('\n').map(w => w.trim()).filter(w => w);
+    updateCondition(id, { listWords: words, term: text });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -341,18 +462,127 @@ const Index = () => {
       });
     };
 
+    // Helper function to check if term is found based on partialMatch setting
+    const checkMatch = (segmentText: string, searchTerm: string, partialMatch: boolean = false): boolean => {
+      const normalizedSegment = normalize(segmentText);
+      const normalizedTerm = normalize(searchTerm);
+      
+      if (partialMatch) {
+        // Partial match: find term anywhere in text (even as part of another word)
+        return normalizedSegment.includes(normalizedTerm);
+      } else {
+        // Exact match: term must be a whole word (with word boundaries)
+        const regex = new RegExp(`(^|\\s)${normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|\\s)`, 'i');
+        return regex.test(normalizedSegment);
+      }
+    };
+
     segments.forEach((segment) => {
-      const segmentNorm = normalize(segment);
       const segmentWords = segment.toLowerCase().split(/\s+/).filter(w => w.trim());
       const matchedTerms: string[] = [];
 
       let hasRequiredTerms = true;
       let hasExcludedTerm = false;
       let hasListMatch = true;
+      let hasPatternMatch = true;
 
-      const firstTermConditions = conditions.filter(c => c.operator !== 'LIST' && c.operator !== 'NOT' && c.operator !== 'OR');
+      const firstTermConditions = conditions.filter(c => c.operator !== 'LIST' && c.operator !== 'NOT' && c.operator !== 'OR' && c.operator !== 'PATTERN');
       const listConditions = conditions.filter(c => c.operator === 'LIST');
       const notConditions = conditions.filter(c => c.operator === 'NOT');
+      const patternConditions = conditions.filter(c => c.operator === 'PATTERN');
+      
+      // Separate pattern conditions by their logic (AND vs OR)
+      const andPatternConditions = patternConditions.filter(c => c.patternLogic !== 'OR');
+      const orPatternConditions = patternConditions.filter(c => c.patternLogic === 'OR');
+
+      // Check if this is a pattern-only search (no other required terms)
+      const hasOtherTerms = firstTermConditions.some(c => c.term.trim()) ||
+                            listConditions.some(c => (c.listWords?.length || 0) > 0);
+      
+      // Process pattern conditions
+      if (patternConditions.length > 0) {
+        const patternMatches: string[] = [];
+        let andPatternsMatch = true;
+        let orPatternsMatch = orPatternConditions.length === 0; // True if no OR patterns
+        
+        // Check AND patterns - all must match
+        andPatternConditions.forEach(cond => {
+          if (!cond.customPattern) return;
+          
+          try {
+            const regex = new RegExp(cond.customPattern, 'g');
+            const matches = segment.match(regex);
+            
+            if (matches && matches.length > 0) {
+              patternMatches.push(...matches);
+            } else {
+              andPatternsMatch = false;
+            }
+          } catch (e) {
+            console.warn('Invalid pattern:', cond.customPattern);
+          }
+        });
+        
+        // Check OR patterns - at least one must match
+        orPatternConditions.forEach(cond => {
+          if (!cond.customPattern) return;
+          
+          try {
+            const regex = new RegExp(cond.customPattern, 'g');
+            const matches = segment.match(regex);
+            
+            if (matches && matches.length > 0) {
+              patternMatches.push(...matches);
+              orPatternsMatch = true;
+            }
+          } catch (e) {
+            console.warn('Invalid pattern:', cond.customPattern);
+          }
+        });
+        
+        // Combined pattern match result
+        hasPatternMatch = andPatternsMatch && orPatternsMatch;
+        
+        // If pattern-only search, create individual results for each match
+        if (!hasOtherTerms && patternMatches.length > 0 && hasPatternMatch) {
+          const segmentStartInText = text.indexOf(segment);
+          
+          patternConditions.forEach(cond => {
+            if (!cond.customPattern) return;
+            
+            try {
+              const regex = new RegExp(cond.customPattern, 'g');
+              let match;
+              
+              while ((match = regex.exec(segment)) !== null) {
+                const matchText = match[0];
+                const matchStartInSegment = match.index;
+                const matchStartInText = segmentStartInText + matchStartInSegment;
+                
+                // Get context around the match (50 chars before and after)
+                const contextStart = Math.max(0, matchStartInText - 50);
+                const contextEnd = Math.min(text.length, matchStartInText + matchText.length + 50);
+                const contextText = text.substring(contextStart, contextEnd);
+                
+                foundResults.push({
+                  text: contextText.trim(),
+                  startIndex: matchStartInText,
+                  endIndex: matchStartInText + matchText.length,
+                  matchedTerms: [matchText],
+                });
+              }
+            } catch (e) {
+              console.warn('Invalid pattern:', cond.customPattern);
+            }
+          });
+          return; // Skip the rest for pattern-only search
+        }
+        
+        // For combined search, add pattern matches to matchedTerms
+        if (patternMatches.length > 0) {
+          matchedTerms.push(...patternMatches);
+        }
+      }
 
       firstTermConditions.forEach(cond => {
         if (!cond.term.trim()) return;
@@ -361,7 +591,7 @@ const Index = () => {
         let found = false;
         
         for (const variation of variations) {
-          if (segmentNorm.includes(normalize(variation))) {
+          if (checkMatch(segment, variation, cond.partialMatch)) {
             matchedTerms.push(cond.term);
             found = true;
             break;
@@ -383,7 +613,7 @@ const Index = () => {
           
           const variations = expandTerm(word);
           for (const variation of variations) {
-            if (segmentNorm.includes(normalize(variation))) {
+            if (checkMatch(segment, variation, cond.partialMatch)) {
               matchedTerms.push(word);
               foundAny = true;
               break;
@@ -401,15 +631,19 @@ const Index = () => {
         
         const variations = expandTerm(cond.term);
         for (const variation of variations) {
-          if (segmentNorm.includes(normalize(variation))) {
+          if (checkMatch(segment, variation, cond.partialMatch)) {
             hasExcludedTerm = true;
             break;
           }
         }
       });
 
-      const hasContent = firstTermConditions.some(c => c.term.trim()) || listConditions.some(c => (c.listWords?.length || 0) > 0);
-      const passesBasicSearch = hasContent && hasRequiredTerms && hasListMatch && !hasExcludedTerm && matchedTerms.length > 0;
+      const hasContent = firstTermConditions.some(c => c.term.trim()) || 
+                         listConditions.some(c => (c.listWords?.length || 0) > 0) ||
+                         patternConditions.some(c => c.customPattern);
+      const passesBasicSearch = hasContent && hasRequiredTerms && hasListMatch && hasPatternMatch && !hasExcludedTerm && matchedTerms.length > 0;
+      
+      console.log('firstTermConditions:', firstTermConditions.map(c => c.term));
       
       const passesFilterRules = checkFilterRules(segment, segmentWords);
       
@@ -525,38 +759,80 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Text input */}
-            <TextInput text={text} onTextChange={setText} />
+            {/* Tabs */}
+            <div className="flex gap-2 bg-white p-2 rounded-xl border border-gold/30 shadow-md">
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+                  activeTab === 'search'
+                    ? 'bg-gold text-white shadow-md'
+                    : 'text-navy/70 hover:bg-gold/10 hover:text-navy'
+                }`}
+              >
+                <Search className="w-5 h-5" />
+                חיפוש
+              </button>
+              <button
+                onClick={() => setActiveTab('tests')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+                  activeTab === 'tests'
+                    ? 'bg-gold text-white shadow-md'
+                    : 'text-navy/70 hover:bg-gold/10 hover:text-navy'
+                }`}
+              >
+                <Bug className="w-5 h-5" />
+                בדיקות
+              </button>
+            </div>
 
-            {/* Unified Search Builder */}
-            <div className="glass-effect rounded-2xl p-5 space-y-5 animate-fade-in">
-              {/* Header with buttons */}
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-md">
-                    <Search className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <h2 className="text-lg font-bold text-navy">בנאי שאילתות חיפוש</h2>
-                    <p className="text-xs text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
+            {/* Tests Tab */}
+            {activeTab === 'tests' && (
+              <div className="bg-white rounded-2xl p-6 animate-fade-in border-2 border-gold shadow-xl">
+                <TestingPanel />
+              </div>
+            )}
+
+            {/* Search Tab Content */}
+            {activeTab === 'search' && (
+              <>
+                {/* Text input */}
+                <TextInput text={text} onTextChange={setText} />
+
+                {/* Results - Right after text input */}
+                <SearchResults
+                  results={results}
+                  highlightedText={highlightedText}
+                  hasSearched={hasSearched}
+                  originalText={text}
+                />
+
+                {/* Unified Search Builder */}
+                <div className="bg-white rounded-2xl p-6 space-y-5 animate-fade-in border-2 border-gold shadow-xl">
+                  {/* Header with buttons */}
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gold rounded-2xl flex items-center justify-center shadow-lg">
+                        <Search className="w-6 h-6 text-navy" />
+                      </div>
+                      <div className="text-right">
+                        <h2 className="text-xl font-bold text-navy">בנאי שאילתות חיפוש</h2>
+                    <p className="text-sm text-muted-foreground">בנה חיפוש מתקדם עם תנאים מרובים</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setShowTemplates(!showTemplates)}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="gap-2 rounded-xl border-gold text-navy hover:bg-gold/10"
                   >
                     <BookTemplate className="w-4 h-4" />
                     תבניות
                   </Button>
                   <Button
                     onClick={addCondition}
-                    variant="outline"
+                    variant="default"
                     size="sm"
-                    className="gap-2 rounded-xl border-navy text-navy hover:bg-navy/10"
                   >
                     <Plus className="w-4 h-4" />
                     הוסף תנאי
@@ -566,19 +842,19 @@ const Index = () => {
 
               {/* Search templates */}
               {showTemplates && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-secondary/30 rounded-xl border border-gold/30 animate-fade-in">
-                  <div className="col-span-full flex items-center gap-2 pb-2 border-b border-border">
-                    <Sparkles className="w-4 h-4 text-gold" />
-                    <span className="font-semibold text-navy">תבניות חיפוש מוכנות</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white rounded-2xl border-2 border-gold animate-fade-in shadow-md">
+                  <div className="col-span-full flex items-center gap-2 pb-3 border-b-2 border-gold">
+                    <Sparkles className="w-5 h-5 text-gold" />
+                    <span className="font-bold text-navy text-lg">תבניות חיפוש מוכנות</span>
                   </div>
                   {searchTemplates.map((template) => (
                     <button
                       key={template.id}
                       onClick={() => applyTemplate(template)}
-                      className="text-right p-4 rounded-xl bg-white border-2 border-transparent hover:border-gold transition-all hover:shadow-md"
+                      className="text-right p-4 rounded-xl bg-white border-2 border-gold/50 hover:border-gold hover:bg-gold/5 transition-all hover:shadow-lg"
                     >
-                      <div className="font-semibold text-navy">{template.name}</div>
-                      <div className="text-sm text-muted-foreground">{template.description}</div>
+                      <div className="font-bold text-navy text-lg">{template.name}</div>
+                      <div className="text-sm text-muted-foreground mt-1">{template.description}</div>
                     </button>
                   ))}
                 </div>
@@ -589,7 +865,7 @@ const Index = () => {
                 {conditions.map((condition, index) => (
                   <div
                     key={condition.id}
-                    className="animate-slide-up bg-white rounded-xl p-4 border-2 border-border/50 hover:border-navy/30 transition-all"
+                    className="animate-slide-up bg-white rounded-2xl p-5 border-2 border-gold/40 hover:border-gold transition-all shadow-md hover:shadow-xl"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex items-start gap-3">
@@ -611,6 +887,7 @@ const Index = () => {
                               <SelectItem value="NOT">ללא</SelectItem>
                               <SelectItem value="NEAR">בקרבת</SelectItem>
                               <SelectItem value="LIST">רשימה</SelectItem>
+                              <SelectItem value="PATTERN">דפוס</SelectItem>
                             </SelectContent>
                           </Select>
                           <Tooltip>
@@ -629,13 +906,49 @@ const Index = () => {
                           </Tooltip>
                         </div>
                       ) : (
-                        <Badge variant="secondary" className="h-10 px-4 bg-navy text-white font-semibold rounded-xl">
-                          חפש:
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Select
+                            value={condition.operator}
+                            onValueChange={(value: ConditionOperator) =>
+                              updateCondition(condition.id, { operator: value })
+                            }
+                          >
+                            <SelectTrigger className="w-28 bg-navy text-white rounded-xl font-semibold border-2 border-navy">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border-2 border-navy/20 rounded-xl">
+                              <SelectItem value="AND">חפש</SelectItem>
+                              <SelectItem value="LIST">רשימה</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button className="p-1 text-muted-foreground hover:text-navy transition-colors">
+                                <HelpCircle className="w-4 h-4" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-right bg-navy text-white p-3 rounded-xl">
+                              {condition.operator === 'LIST' ? (
+                                <>
+                                  <div className="font-bold mb-1">חיפוש ברשימה</div>
+                                  <div className="text-sm opacity-90 mb-2">חפש לפי רשימת מילים - כל שורה היא מילת חיפוש</div>
+                                  <div className="text-xs bg-white/10 p-2 rounded-lg">
+                                    בחר "אחת מהן" (OR) או "כולן" (AND)
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="font-bold mb-1">חיפוש רגיל</div>
+                                  <div className="text-sm opacity-90">הקלד מילה או ביטוי לחיפוש</div>
+                                </>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                       )}
 
-                      {/* Input field */}
-                      {condition.operator === 'LIST' && index > 0 ? (
+                      {/* Input field - LIST mode for any condition */}
+                      {condition.operator === 'LIST' ? (
                         <div className="flex-1 space-y-3">
                           <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl flex-wrap">
                             <List className="w-5 h-5 text-navy" />
@@ -655,25 +968,53 @@ const Index = () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="flex gap-3">
-                            <Textarea
-                              value={condition.listWords?.join('\n') || ''}
-                              onChange={(e) => handleListWordsChange(condition.id, e.target.value)}
-                              placeholder="הכנס מילים (כל מילה בשורה נפרדת)..."
-                              className="flex-1 min-h-[100px] rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right resize-none"
-                              dir="rtl"
-                            />
-                            <div className="flex flex-col gap-2">
+                          <div className="space-y-3">
+                            <div className="relative">
+                              <Textarea
+                                value={condition.term || ''}
+                                onChange={(e) => handleListWordsChange(condition.id, e.target.value)}
+                                onKeyDown={(e) => {
+                                  // Allow Enter to create new line in textarea
+                                  if (e.key === 'Enter') {
+                                    e.stopPropagation();
+                                    // Don't prevent default - let Enter work naturally
+                                  }
+                                }}
+                                placeholder="הכנס מילים (כל מילה בשורה נפרדת)..."
+                                className="w-full min-h-[120px] rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right resize-none"
+                                dir="rtl"
+                              />
+                            </div>
+                            <div className="flex justify-end">
                               <WordListSelector
                                 wordLists={wordLists}
                                 categories={categories}
+                                currentWords={condition.listWords || []}
                                 onSelectList={(words) => {
-                                  const currentWords = condition.listWords || [];
-                                  const newWords = [...new Set([...currentWords, ...words])];
-                                  updateCondition(condition.id, { listWords: newWords, term: newWords.join(' | ') });
+                                  const currentText = condition.term || '';
+                                  const newText = currentText ? `${currentText}\n${words.join('\n')}` : words.join('\n');
+                                  handleListWordsChange(condition.id, newText);
+                                }}
+                                onAddList={(name, words) => {
+                                  addWordList(name, words, 'general');
+                                  toast({
+                                    title: 'רשימה נשמרה!',
+                                    description: `הרשימה "${name}" נשמרה עם ${words.length} מילים`,
+                                  });
                                 }}
                               />
                             </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-3 bg-secondary/30 rounded-xl">
+                            <Switch
+                              id={`partial-${condition.id}`}
+                              checked={condition.partialMatch || false}
+                              onCheckedChange={(checked) => updateCondition(condition.id, { partialMatch: checked })}
+                              className="data-[state=checked]:bg-gold"
+                            />
+                            <Label htmlFor={`partial-${condition.id}`} className="text-sm font-medium text-navy cursor-pointer">
+                              חפש גם כחלק ממילה (לדוגמא: "מסכת" ימצא גם "במסכת")
+                            </Label>
                           </div>
                           {condition.listWords && condition.listWords.length > 0 && (
                             <div className="flex flex-wrap gap-2 p-3 bg-gold/10 rounded-xl">
@@ -690,15 +1031,108 @@ const Index = () => {
                             </div>
                           )}
                         </div>
+                      ) : condition.operator === 'PATTERN' ? (
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl flex-wrap justify-between">
+                            <div className="flex items-center gap-3">
+                              <Regex className="w-5 h-5 text-navy" />
+                              <span className="text-sm text-muted-foreground font-medium">חיפוש לפי דפוס/תבנית</span>
+                            </div>
+                            {/* Logic selector for pattern - AND/OR with other conditions */}
+                            {index > 0 && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">קשר לתנאים אחרים:</span>
+                                <Select
+                                  value={condition.patternLogic || 'AND'}
+                                  onValueChange={(value: 'AND' | 'OR') =>
+                                    updateCondition(condition.id, { patternLogic: value })
+                                  }
+                                >
+                                  <SelectTrigger className="w-24 h-8 bg-white rounded-lg border-2 border-gold/30 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-white rounded-xl">
+                                    <SelectItem value="AND">וגם (AND)</SelectItem>
+                                    <SelectItem value="OR">או (OR)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {patternPresets.map((preset) => (
+                              <button
+                                key={preset.id}
+                                onClick={() => updateCondition(condition.id, { 
+                                  patternType: preset.id as PatternType,
+                                  customPattern: preset.pattern,
+                                  term: preset.pattern
+                                })}
+                                className={`p-3 rounded-xl text-right transition-all border-2 ${
+                                  condition.patternType === preset.id
+                                    ? 'border-gold bg-gold/10 text-navy'
+                                    : 'border-border bg-white hover:border-gold/50'
+                                }`}
+                              >
+                                <div className="font-medium text-sm">{preset.name}</div>
+                                <div className="text-xs text-muted-foreground">{preset.description}</div>
+                                {preset.example && (
+                                  <div className="text-xs text-gold mt-1">דוגמה: {preset.example}</div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                          {condition.patternType === 'custom' && (
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-navy">דפוס מותאם אישית (Regex):</Label>
+                              <Input
+                                value={condition.customPattern || ''}
+                                onChange={(e) => updateCondition(condition.id, { 
+                                  customPattern: e.target.value,
+                                  term: e.target.value
+                                })}
+                                placeholder="לדוגמה: [א-ת]{2,3},[אב]"
+                                className="font-mono text-sm rounded-xl"
+                                dir="ltr"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                * = כל תו, [א-ת] = אות עברית, {'{2,3}'} = 2 עד 3 פעמים
+                              </p>
+                            </div>
+                          )}
+                          {condition.patternType && condition.patternType !== 'custom' && (
+                            <div className="p-3 bg-gold/10 rounded-xl">
+                              <p className="text-sm text-navy">
+                                <span className="font-medium">הדפוס שנבחר: </span>
+                                <code className="bg-white px-2 py-1 rounded text-xs font-mono" dir="ltr">
+                                  {condition.customPattern}
+                                </code>
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <Input
-                          value={condition.term}
-                          onChange={(e) => updateCondition(condition.id, { term: e.target.value })}
-                          onKeyPress={handleKeyPress}
-                          placeholder="הקלד מילה לחיפוש..."
-                          className="flex-1 text-lg h-12 rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right"
-                          dir="rtl"
-                        />
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            value={condition.term}
+                            onChange={(e) => updateCondition(condition.id, { term: e.target.value })}
+                            onKeyPress={handleKeyPress}
+                            placeholder="הקלד מילה לחיפוש..."
+                            className="w-full text-lg h-12 rounded-xl bg-secondary/30 border-2 border-border focus:border-navy text-right"
+                            dir="rtl"
+                          />
+                          <div className="flex items-center gap-2 p-2 bg-secondary/30 rounded-xl">
+                            <Switch
+                              id={`partial-${condition.id}`}
+                              checked={condition.partialMatch || false}
+                              onCheckedChange={(checked) => updateCondition(condition.id, { partialMatch: checked })}
+                              className="data-[state=checked]:bg-gold"
+                            />
+                            <Label htmlFor={`partial-${condition.id}`} className="text-sm font-medium text-navy cursor-pointer">
+                              חפש גם כחלק ממילה
+                            </Label>
+                          </div>
+                        </div>
                       )}
 
                       {/* NEAR options */}
@@ -744,139 +1178,97 @@ const Index = () => {
 
               {/* Query preview */}
               {queryPreview && (
-                <div className="flex items-start gap-3 p-4 bg-navy/5 rounded-xl border border-navy/20 animate-fade-in">
-                  <Eye className="w-5 h-5 text-navy mt-0.5 shrink-0" />
+                <div className="flex items-start gap-3 p-5 bg-white rounded-2xl border-2 border-gold animate-fade-in shadow-md">
+                  <Eye className="w-6 h-6 text-navy mt-0.5 shrink-0" />
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-navy mb-1">תצוגה מקדימה של השאילתה:</div>
-                    <div className="text-base font-mono text-foreground bg-white px-3 py-2 rounded-lg inline-block">
+                    <div className="text-base font-bold text-navy mb-2">תצוגה מקדימה של השאילתה:</div>
+                    <div className="text-lg font-mono text-foreground bg-white px-4 py-3 rounded-xl inline-block border-2 border-gold shadow-sm">
                       {queryPreview}
                     </div>
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Smart Search Section */}
-            <Collapsible open={smartSearchOpen} onOpenChange={setSmartSearchOpen}>
-              <div className="bg-gradient-to-br from-gold/10 to-gold/5 rounded-2xl border-2 border-gold/30 overflow-hidden">
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-gold/5 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-gold to-gold-dark rounded-xl flex items-center justify-center shadow-md">
-                        <Sparkles className="w-6 h-6 text-navy" />
-                      </div>
-                      <div className="text-right">
-                        <h3 className="font-bold text-lg text-navy">חיפוש חכם</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {Object.values(smartOptions).filter(Boolean).length} כללים פעילים
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronDown className={`w-5 h-5 text-navy transition-transform duration-200 ${smartSearchOpen ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <div className="p-5 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {smartSearchConfig.map((config) => {
-                      const Icon = config.icon;
-                      const isActive = smartOptions[config.key];
-                      
-                      return (
-                        <Tooltip key={config.key}>
-                          <TooltipTrigger asChild>
-                            <div 
-                              className={`flex items-center justify-between p-4 rounded-xl transition-all cursor-pointer ${
-                                isActive 
-                                  ? 'bg-white border-2 border-gold shadow-sm' 
-                                  : 'bg-white/50 border-2 border-transparent hover:border-gold/30'
-                              }`}
-                              onClick={() => setSmartOptions({ ...smartOptions, [config.key]: !isActive })}
-                            >
-                              <div className="flex items-center gap-3 text-right">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-gold text-navy' : 'bg-secondary text-muted-foreground'}`}>
-                                  <Icon className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <Label className={`font-medium ${isActive ? 'text-navy' : 'text-foreground'}`}>{config.label}</Label>
-                                  <p className="text-xs text-muted-foreground">{config.description}</p>
-                                </div>
-                              </div>
-                              <Switch
-                                checked={isActive}
-                                onCheckedChange={(checked) => setSmartOptions({ ...smartOptions, [config.key]: checked })}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-navy text-white p-3 rounded-xl max-w-xs text-right">
-                            <div className="font-bold mb-1">{config.label}</div>
-                            <div className="text-sm opacity-90 mb-2">{config.description}</div>
-                            <div className="text-xs bg-white/10 px-2 py-1 rounded-lg inline-block">
-                              דוגמה: {config.example}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
+              {/* Divider */}
+              <div className="border-t-2 border-gold/30"></div>
 
-            {/* Filter Rules Section */}
-            <Collapsible open={filterRulesOpen} onOpenChange={setFilterRulesOpen}>
-              <div className="bg-gradient-to-br from-gold/5 to-navy/5 rounded-2xl border-2 border-gold/20 overflow-hidden">
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-white/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-md">
-                        <Filter className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="text-right">
-                        <h3 className="font-bold text-lg text-navy">כללי סינון מתקדמים</h3>
-                        <p className="text-sm text-muted-foreground">
-                          מיקום מילים, לפני/אחרי, אורך שורה ועוד
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {(filterRules.positionRules.length > 0 || filterRules.textPositionRules.length > 0) && (
-                        <span className="bg-gold text-navy text-sm font-semibold px-3 py-1 rounded-full">
-                          {filterRules.positionRules.length + filterRules.textPositionRules.length} כללים
-                        </span>
-                      )}
-                      <ChevronDown className={`w-5 h-5 text-navy transition-transform duration-200 ${filterRulesOpen ? 'rotate-180' : ''}`} />
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <div className="p-5 pt-0 space-y-6">
-                    <FilterRulesBuilder
-                      rules={filterRules}
-                      onRulesChange={setFilterRules}
-                    />
+              {/* Smart Search Options - Integrated */}
+              <div>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-gold/30">
+                  <Sparkles className="w-5 h-5 text-gold" />
+                  <h4 className="font-bold text-navy text-lg">חיפוש חכם</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {smartSearchConfig.map((config) => {
+                    const Icon = config.icon;
+                    const isActive = smartOptions[config.key];
                     
-                    {/* Active Rules Preview with Examples */}
-                    <ActiveRulesPreview rules={filterRules} />
-                  </div>
-                </CollapsibleContent>
+                    return (
+                      <Tooltip key={config.key}>
+                        <TooltipTrigger asChild>
+                          <div 
+                            className={`flex items-center justify-between p-5 rounded-2xl transition-all cursor-pointer shadow-md ${
+                              isActive 
+                                ? 'bg-white border-2 border-gold shadow-lg' 
+                                : 'bg-white border-2 border-gold/30 hover:border-gold/50 hover:shadow-lg'
+                            }`}
+                            onClick={() => setSmartOptions({ ...smartOptions, [config.key]: !isActive })}
+                          >
+                            <div className="flex items-center gap-3 text-right">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${isActive ? 'bg-gold text-navy' : 'bg-muted text-muted-foreground'}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <Label className={`font-bold text-base cursor-pointer ${isActive ? 'text-navy' : 'text-foreground'}`}>{config.label}</Label>
+                                <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={isActive}
+                              onCheckedChange={(checked) => setSmartOptions({ ...smartOptions, [config.key]: checked })}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-navy text-white p-4 rounded-2xl max-w-xs text-right shadow-2xl">
+                          <div className="font-bold mb-2 text-base">{config.label}</div>
+                          <div className="text-sm opacity-90 mb-2">{config.description}</div>
+                          <div className="text-xs bg-white/10 px-3 py-2 rounded-xl inline-block font-mono">
+                            דוגמה: {config.example}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
-            </Collapsible>
+
+              {/* Divider */}
+              <div className="border-t-2 border-gold/30"></div>
+
+              {/* Filter Rules - Integrated */}
+              <div>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-gold/30">
+                  <Filter className="w-5 h-5 text-navy" />
+                  <h4 className="font-bold text-navy text-lg">כללי מיקום וסינון</h4>
+                </div>
+                <FilterRulesBuilder
+                  rules={filterRules}
+                  onRulesChange={setFilterRules}
+                />
+                
+                {/* Active Rules Preview with Examples */}
+                <ActiveRulesPreview rules={filterRules} />
+              </div>
+            </div>
 
             {/* Validation System */}
             <RulesValidationSystem 
               rules={filterRules}
               checkFilterRules={checkFilterRules}
             />
-
-            {/* Results */}
-            <SearchResults
-              results={results}
-              highlightedText={highlightedText}
-              hasSearched={hasSearched}
-            />
+              </>
+            )}
           </div>
         </main>
 
@@ -887,12 +1279,12 @@ const Index = () => {
               <Button
                 onClick={performSearch}
                 size="lg"
-                className="w-16 h-16 rounded-full bg-gradient-to-br from-navy to-navy-light hover:from-gold hover:to-gold-dark text-white hover:text-navy shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95"
+                className="w-16 h-16 rounded-full bg-gold hover:bg-gold-dark text-navy shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 border-2 border-navy/10"
               >
                 <Search className="w-7 h-7" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="bg-navy text-white rounded-xl font-semibold">
+            <TooltipContent side="right" className="bg-navy text-white rounded-xl font-semibold px-4 py-2">
               חפש עכשיו
             </TooltipContent>
           </Tooltip>
@@ -901,18 +1293,18 @@ const Index = () => {
         {/* Scroll to top button */}
         <Button
           onClick={scrollToTop}
-          variant="outline"
+          variant="secondary"
           size="icon"
-          className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full border-2 border-gold bg-white/90 backdrop-blur-sm hover:bg-gold hover:text-navy shadow-lg transition-all"
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full shadow-2xl transition-all hover:scale-110"
         >
-          <ArrowUp className="w-5 h-5" />
+          <ArrowUp className="w-6 h-6" />
         </Button>
 
         {/* Footer */}
-        <footer className="bg-navy border-t-4 border-gold mt-12 py-6">
+        <footer className="bg-navy border-t-4 border-gold mt-12 py-8">
           <div className="container mx-auto px-6 text-center">
-            <p className="text-white font-medium">חיפוש חכם - ניתוח טקסטים מתקדם</p>
-            <p className="text-gold-light text-sm mt-1">הנתונים נשמרים במחשב שלך 💾</p>
+            <p className="text-white font-bold text-lg">חיפוש חכם - ניתוח טקסטים מתקדם</p>
+            <p className="text-gold text-sm mt-2 font-semibold">הנתונים נשמרים במחשב שלך 💾</p>
           </div>
         </footer>
 

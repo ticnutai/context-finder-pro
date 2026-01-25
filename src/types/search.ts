@@ -1,6 +1,7 @@
-export type ConditionOperator = 'AND' | 'OR' | 'NOT' | 'NEAR' | 'LIST';
+export type ConditionOperator = 'AND' | 'OR' | 'NOT' | 'NEAR' | 'LIST' | 'PATTERN';
 export type ProximityDirection = 'before' | 'after' | 'both';
 export type ListMode = 'any' | 'all';
+export type PatternType = 'talmud-ref' | 'gematria-ref' | 'custom';
 export type PositionType = 'before' | 'after' | 'anywhere';
 export type TextPosition = 'start' | 'end' | 'anywhere';
 
@@ -46,6 +47,10 @@ export interface SearchCondition {
   proximityDirection?: ProximityDirection;
   listWords?: string[];
   listMode?: ListMode;
+  partialMatch?: boolean;  // חיפוש חלקי - מצא את המילה גם כחלק ממילה אחרת
+  patternType?: PatternType;  // סוג הדפוס לחיפוש
+  customPattern?: string;  // דפוס מותאם אישית (regex)
+  patternLogic?: 'AND' | 'OR';  // לוגיקה של דפוס ביחס לתנאים אחרים
 }
 
 export interface SearchResult {
