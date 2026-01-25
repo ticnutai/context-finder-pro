@@ -3,8 +3,13 @@ import { Header } from '@/components/Header';
 import { TextInput } from '@/components/TextInput';
 import { SearchResults } from '@/components/SearchResults';
 import { SearchHistory } from '@/components/SearchHistory';
+import { SearchTemplates } from '@/components/SearchTemplates';
+import { ExportResults } from '@/components/ExportResults';
+import { ShareSearch } from '@/components/ShareSearch';
+import { ResultBookmarks } from '@/components/ResultBookmarks';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useWordLists } from '@/hooks/useWordLists';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { SearchCondition, SearchResult, SmartSearchOptions, FilterRules, ConditionOperator, ProximityDirection, ListMode, PatternType } from '@/types/search';
 import { useToast } from '@/hooks/use-toast';
 import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
@@ -311,6 +316,11 @@ const Index = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Bookmarks state - for marking/highlighting results
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [resultNotes, setResultNotes] = useState<Record<string, string>>({});
+  const [resultColors, setResultColors] = useState<Record<string, string>>({});
+
   // Collapsible conditions state
   const [collapsedConditions, setCollapsedConditions] = useState<Set<string>>(new Set());
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -321,6 +331,95 @@ const Index = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'f',
+      ctrl: true,
+      callback: () => {
+        document.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+      },
+      description: 'התמקד בחיפוש',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      callback: () => {
+        if (conditions.length > 0 && hasSearched) {
+          // Save current search to history
+          (window as any).saveSearchHistory?.(conditions, results.length);
+          toast({ title: 'החיפוש נשמר להיסטוריה' });
+        }
+      },
+      description: 'שמור חיפוש',
+    },
+    {
+      key: 'e',
+      ctrl: true,
+      callback: () => {
+        if (results.length > 0) {
+          document.querySelector<HTMLButtonElement>('[aria-label="ייצא תוצאות"]')?.click();
+        }
+      },
+      description: 'ייצא תוצאות',
+    },
+  ]);
+
+  // Bookmark functions
+  const toggleBookmark = (resultId: string) => {
+    setBookmarkedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(resultId)) {
+        newSet.delete(resultId);
+        // Remove note and color when unbookmarking
+        setResultNotes(notes => {
+          const newNotes = { ...notes };
+          delete newNotes[resultId];
+          return newNotes;
+        });
+        setResultColors(colors => {
+          const newColors = { ...colors };
+          delete newColors[resultId];
+          return newColors;
+        });
+      } else {
+        newSet.add(resultId);
+      }
+      return newSet;
+    });
+  };
+
+  const addNote = (resultId: string, note: string) => {
+    setResultNotes(prev => ({ ...prev, [resultId]: note }));
+  };
+
+  const setColor = (resultId: string, color: string) => {
+    setResultColors(prev => ({ ...prev, [resultId]: color }));
+  };
+
+  // Load search from URL params (for sharing)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(atob(searchParam)));
+        if (decoded.conditions) {
+          setConditions(decoded.conditions);
+          if (decoded.text) {
+            setText(decoded.text);
+          }
+          toast({
+            title: 'חיפוש נטען',
+            description: 'החיפוש המשותף נטען בהצלחה',
+          });
+        }
+      } catch (error) {
+        console.error('Error loading shared search:', error);
+      }
+    }
+  }, []);
 
   // Toggle condition collapse
   const toggleConditionCollapse = (id: string) => {
@@ -814,13 +913,33 @@ const Index = () => {
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Hero section */}
             <div className="text-center py-6 animate-fade-in">
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-4 flex-col gap-4">
                 <SearchHistory
                   history={history}
                   onRestore={handleRestore}
                   onDelete={deleteHistoryItem}
                   onClear={clearHistory}
                 />
+                <SearchTemplates
+                  onApplyTemplate={(templateConditions) => {
+                    setConditions(templateConditions);
+                    toast({
+                      title: 'תבנית הוחלה',
+                      description: 'תנאי החיפוש מהתבנית נטענו בהצלחה',
+                    });
+                  }}
+                />
+                <div className="flex gap-3 justify-center flex-wrap">
+                  <ExportResults
+                    results={results}
+                    text={text}
+                    conditions={conditions}
+                  />
+                  <ShareSearch
+                    conditions={conditions}
+                    text={text}
+                  />
+                </div>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-navy mb-2">
                 מערכת חיפוש מתקדמת
@@ -871,12 +990,43 @@ const Index = () => {
 
                 {/* Results - Right after text input */}
                 <div ref={resultsRef}>
-                  <SearchResults
-                    results={results}
-                    highlightedText={highlightedText}
-                    hasSearched={hasSearched}
-                    originalText={text}
-                  />
+                  {hasSearched && results.length > 0 ? (
+                    <div className="bg-white rounded-2xl p-6 animate-fade-in border border-gold shadow-md">
+                      <div className="flex items-center justify-between mb-6 flex-row-reverse">
+                        <h2 className="text-2xl font-bold text-navy">
+                          תוצאות חיפוש ({results.length})
+                        </h2>
+                        <div className="flex gap-2">
+                          <ExportResults
+                            results={results}
+                            text={text}
+                            conditions={conditions}
+                          />
+                          <ShareSearch
+                            conditions={conditions}
+                            text={text}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <ResultBookmarks
+                          results={results.map((r, i) => ({
+                            ...r,
+                            note: resultNotes[`result-${i}`],
+                            highlightColor: resultColors[`result-${i}`],
+                          }))}
+                          bookmarkedIds={bookmarkedIds}
+                          onToggleBookmark={toggleBookmark}
+                          onAddNote={addNote}
+                          onSetColor={setColor}
+                        />
+                      </div>
+                    </div>
+                  ) : hasSearched && results.length === 0 ? (
+                    <div className="bg-white rounded-2xl p-8 text-center animate-fade-in border border-gold shadow-md">
+                      <p className="text-lg text-muted-foreground">לא נמצאו תוצאות</p>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Unified Search Builder */}
