@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { TextInput } from '@/components/TextInput';
 import { SearchResults } from '@/components/SearchResults';
@@ -7,6 +7,9 @@ import { SearchTemplates } from '@/components/SearchTemplates';
 import { ExportResults } from '@/components/ExportResults';
 import { ShareSearch } from '@/components/ShareSearch';
 import { ResultBookmarks } from '@/components/ResultBookmarks';
+import { AdvancedSavedSearches } from '@/components/AdvancedSavedSearches';
+import { SearchWithinResults } from '@/components/SearchWithinResults';
+import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useWordLists } from '@/hooks/useWordLists';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -17,7 +20,7 @@ import { RulesValidationSystem } from '@/components/RulesValidationSystem';
 import { ActiveRulesPreview } from '@/components/ActiveRulesPreview';
 import { SettingsButton } from '@/components/SettingsButton';
 import { TestingPanel } from '@/components/TestingPanel';
-import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex, ChevronDown, ChevronUp, Keyboard } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -29,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { WordListSelector } from '@/components/WordListSelector';
+import { fuzzySearchInText, generateHebrewVariations } from '@/utils/fuzzySearch';
 
 // תבניות חיפוש מוכנות
 const searchTemplates = [
@@ -321,9 +325,22 @@ const Index = () => {
   const [resultNotes, setResultNotes] = useState<Record<string, string>>({});
   const [resultColors, setResultColors] = useState<Record<string, string>>({});
 
+  // States for new features
+  const [fuzzySearchEnabled, setFuzzySearchEnabled] = useState(false);
+  const [filteredResults, setFilteredResults] = useState<SearchResult[]>([]);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+
   // Collapsible conditions state
   const [collapsedConditions, setCollapsedConditions] = useState<Set<string>>(new Set());
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Use filtered results or all results
+  const displayResults = filteredResults.length > 0 || results.length === 0 ? filteredResults : results;
+
+  // Reset filtered results when results change
+  useEffect(() => {
+    setFilteredResults(results);
+  }, [results]);
 
   // Draggable search button state
   const [buttonPosition, setButtonPosition] = useState({ x: 32, y: typeof window !== 'undefined' ? window.innerHeight - 96 : 500 });
@@ -914,24 +931,35 @@ const Index = () => {
             {/* Hero section */}
             <div className="text-center py-6 animate-fade-in">
               <div className="flex justify-center mb-4 flex-col gap-4">
-                <SearchHistory
-                  history={history}
-                  onRestore={handleRestore}
-                  onDelete={deleteHistoryItem}
-                  onClear={clearHistory}
-                />
-                <SearchTemplates
-                  onApplyTemplate={(templateConditions) => {
-                    setConditions(templateConditions);
-                    toast({
-                      title: 'תבנית הוחלה',
-                      description: 'תנאי החיפוש מהתבנית נטענו בהצלחה',
-                    });
-                  }}
-                />
+                <div className="flex gap-3 justify-center flex-wrap">
+                  <SearchHistory
+                    history={history}
+                    onRestore={handleRestore}
+                    onDelete={deleteHistoryItem}
+                    onClear={clearHistory}
+                  />
+                  <SearchTemplates
+                    onApplyTemplate={(templateConditions) => {
+                      setConditions(templateConditions);
+                      toast({
+                        title: 'תבנית הוחלה',
+                        description: 'תנאי החיפוש מהתבנית נטענו בהצלחה',
+                      });
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
+                    className="gap-2 border-gold text-navy hover:bg-gold/10"
+                  >
+                    <Keyboard className="w-4 h-4" />
+                    קיצורים
+                  </Button>
+                </div>
                 <div className="flex gap-3 justify-center flex-wrap">
                   <ExportResults
-                    results={results}
+                    results={displayResults}
                     text={text}
                     conditions={conditions}
                   />
@@ -941,6 +969,28 @@ const Index = () => {
                   />
                 </div>
               </div>
+
+              {/* Keyboard shortcuts info */}
+              {showKeyboardShortcuts && (
+                <div className="bg-white rounded-2xl border border-gold p-4 mb-4 animate-fade-in text-right shadow-md">
+                  <h4 className="font-bold text-navy mb-3">⌨️ קיצורי מקלדת</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2">
+                      <span className="text-muted-foreground">התמקד בחיפוש</span>
+                      <kbd className="bg-navy text-white px-2 py-0.5 rounded text-xs">Ctrl+F</kbd>
+                    </div>
+                    <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2">
+                      <span className="text-muted-foreground">שמור חיפוש</span>
+                      <kbd className="bg-navy text-white px-2 py-0.5 rounded text-xs">Ctrl+S</kbd>
+                    </div>
+                    <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2">
+                      <span className="text-muted-foreground">ייצא תוצאות</span>
+                      <kbd className="bg-navy text-white px-2 py-0.5 rounded text-xs">Ctrl+E</kbd>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <h2 className="text-3xl sm:text-4xl font-extrabold text-navy mb-2">
                 מערכת חיפוש מתקדמת
               </h2>
@@ -988,17 +1038,33 @@ const Index = () => {
                 {/* Text input */}
                 <TextInput text={text} onTextChange={setText} />
 
+                {/* Saved Searches */}
+                <AdvancedSavedSearches
+                  currentConditions={conditions}
+                  currentSmartOptions={smartOptions}
+                  currentFilterRules={filterRules}
+                  onLoadSearch={(loadedConditions, loadedSmartOptions, loadedFilterRules) => {
+                    setConditions(loadedConditions);
+                    if (loadedSmartOptions) setSmartOptions(loadedSmartOptions);
+                    if (loadedFilterRules) setFilterRules(loadedFilterRules);
+                  }}
+                />
+
                 {/* Results - Right after text input */}
                 <div ref={resultsRef}>
-                  {hasSearched && results.length > 0 ? (
+                  {hasSearched && displayResults.length > 0 ? (
                     <div className="bg-white rounded-2xl p-6 animate-fade-in border border-gold shadow-md">
-                      <div className="flex items-center justify-between mb-6 flex-row-reverse">
+                      <div className="flex items-center justify-between mb-4 flex-row-reverse flex-wrap gap-3">
                         <h2 className="text-2xl font-bold text-navy">
-                          תוצאות חיפוש ({results.length})
+                          תוצאות חיפוש ({displayResults.length}{displayResults.length !== results.length ? ` / ${results.length}` : ''})
                         </h2>
-                        <div className="flex gap-2">
-                          <ExportResults
+                        <div className="flex gap-2 flex-wrap">
+                          <SearchWithinResults
                             results={results}
+                            onFilteredResults={setFilteredResults}
+                          />
+                          <ExportResults
+                            results={displayResults}
                             text={text}
                             conditions={conditions}
                           />
@@ -1010,7 +1076,7 @@ const Index = () => {
                       </div>
                       <div className="space-y-4">
                         <ResultBookmarks
-                          results={results.map((r, i) => ({
+                          results={displayResults.map((r, i) => ({
                             ...r,
                             note: resultNotes[`result-${i}`],
                             highlightColor: resultColors[`result-${i}`],
