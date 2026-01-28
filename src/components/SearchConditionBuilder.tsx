@@ -88,6 +88,11 @@ const operatorHelp: Record<ConditionOperator, { label: string; description: stri
     description: 'חפש אחת או כל המילים מרשימה',
     example: 'רשימה של שמות → ימצא כל שם מהרשימה',
   },
+  PATTERN: {
+    label: 'דפוס',
+    description: 'חפש לפי דפוס מותאם (regex)',
+    example: 'דף [א-ת]+ עמוד [א-ב] → ימצא מראי מקום',
+  },
 };
 
 // הגדרות חיפוש חכם

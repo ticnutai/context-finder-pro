@@ -47,7 +47,7 @@ export function TextInput({ text, onTextChange }: TextInputProps) {
           canvas.height = viewport.height;
           canvas.width = viewport.width;
 
-          await page.render({ canvasContext: context, viewport }).promise;
+          await page.render({ canvasContext: context, viewport, canvas }).promise;
           const imageData = canvas.toDataURL();
           
           const ocrResult = await Tesseract.recognize(imageData, 'heb+eng');
