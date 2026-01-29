@@ -113,6 +113,61 @@ const templates: SearchTemplate[] = [
       { id: '2', type: 'text', text: 'רש"י', distance: 50, order: 'any' },
     ],
   },
+  // New templates
+  {
+    id: 'parentheses',
+    name: 'טקסט בסוגריים',
+    description: 'מציאת כל התכנים בתוך סוגריים',
+    category: 'דפוסים',
+    conditions: [
+      { id: '1', type: 'pattern', text: 'parentheses', distance: 0, order: 'any' },
+    ],
+  },
+  {
+    id: 'quotes',
+    name: 'ציטוטים במרכאות',
+    description: 'מציאת טקסט במרכאות כפולות או בודדות',
+    category: 'דפוסים',
+    conditions: [
+      { id: '1', type: 'pattern', text: 'quotes', distance: 0, order: 'any' },
+    ],
+  },
+  {
+    id: 'numbered-list',
+    name: 'רשימות ממוספרות',
+    description: 'זיהוי פריטים ממוספרים (1. 2. א. ב.)',
+    category: 'דפוסים',
+    conditions: [
+      { id: '1', type: 'pattern', text: 'numbered-list', distance: 0, order: 'any' },
+    ],
+  },
+  {
+    id: 'definitions',
+    name: 'הגדרות והסברים',
+    description: 'זיהוי דפוסי "כלומר", "דהיינו", "פירוש"',
+    category: 'לשון',
+    conditions: [
+      { id: '1', type: 'pattern', text: 'definitions', distance: 0, order: 'any' },
+    ],
+  },
+  {
+    id: 'questions',
+    name: 'שאלות',
+    description: 'זיהוי משפטי שאלה בעברית',
+    category: 'לשון',
+    conditions: [
+      { id: '1', type: 'pattern', text: 'questions', distance: 0, order: 'any' },
+    ],
+  },
+  {
+    id: 'answers',
+    name: 'תשובות',
+    description: 'זיהוי דפוסי תשובה והכרעה',
+    category: 'לשון',
+    conditions: [
+      { id: '1', type: 'pattern', text: 'answers', distance: 0, order: 'any' },
+    ],
+  },
 ];
 
 export function SearchTemplates({ onApplyTemplate }: SearchTemplatesProps) {

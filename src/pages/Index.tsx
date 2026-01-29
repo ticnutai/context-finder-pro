@@ -10,9 +10,11 @@ import { ResultBookmarks } from '@/components/ResultBookmarks';
 import { AdvancedSavedSearches } from '@/components/AdvancedSavedSearches';
 import { SearchWithinResults } from '@/components/SearchWithinResults';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
+import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
+import { SettingsExportImport } from '@/components/SettingsExportImport';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useWordLists } from '@/hooks/useWordLists';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts, useResultsNavigation } from '@/hooks/useKeyboardShortcuts';
 import { SearchCondition, SearchResult, SmartSearchOptions, FilterRules, ConditionOperator, ProximityDirection, ListMode, PatternType } from '@/types/search';
 import { useToast } from '@/hooks/use-toast';
 import { FilterRulesBuilder } from '@/components/FilterRulesBuilder';
@@ -33,6 +35,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { WordListSelector } from '@/components/WordListSelector';
 import { fuzzySearchInText, generateHebrewVariations } from '@/utils/fuzzySearch';
+
 
 // תבניות חיפוש מוכנות
 const searchTemplates = [
@@ -364,8 +367,6 @@ const Index = () => {
       ctrl: true,
       callback: () => {
         if (conditions.length > 0 && hasSearched) {
-          // Save current search to history
-          (window as any).saveSearchHistory?.(conditions, results.length);
           toast({ title: 'החיפוש נשמר להיסטוריה' });
         }
       },
@@ -380,6 +381,20 @@ const Index = () => {
         }
       },
       description: 'ייצא תוצאות',
+    },
+    {
+      key: '?',
+      callback: () => {
+        setShowKeyboardShortcuts(true);
+      },
+      description: 'פתח מדריך קיצורים',
+    },
+    {
+      key: 'Escape',
+      callback: () => {
+        setShowKeyboardShortcuts(false);
+      },
+      description: 'סגור חלון',
     },
   ]);
 
@@ -931,7 +946,7 @@ const Index = () => {
             {/* Hero section */}
             <div className="text-center py-6 animate-fade-in">
               <div className="flex justify-center mb-4 flex-col gap-4">
-                <div className="flex gap-3 justify-center flex-wrap">
+                <div className="flex gap-2 sm:gap-3 justify-center flex-wrap">
                   <SearchHistory
                     history={history}
                     onRestore={handleRestore}
@@ -947,17 +962,13 @@ const Index = () => {
                       });
                     }}
                   />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
-                    className="gap-2 border-gold text-navy hover:bg-gold/10"
-                  >
-                    <Keyboard className="w-4 h-4" />
-                    קיצורים
-                  </Button>
+                  <KeyboardShortcutsHelp 
+                    open={showKeyboardShortcuts}
+                    onOpenChange={setShowKeyboardShortcuts}
+                  />
+                  <SettingsExportImport />
                 </div>
-                <div className="flex gap-3 justify-center flex-wrap">
+                <div className="flex gap-2 sm:gap-3 justify-center flex-wrap">
                   <ExportResults
                     results={displayResults}
                     text={text}
@@ -969,38 +980,16 @@ const Index = () => {
                   />
                 </div>
               </div>
-
-              {/* Keyboard shortcuts info */}
-              {showKeyboardShortcuts && (
-                <div className="bg-white rounded-2xl border border-gold p-4 mb-4 animate-fade-in text-right shadow-md">
-                  <h4 className="font-bold text-navy mb-3">⌨️ קיצורי מקלדת</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                    <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2">
-                      <span className="text-muted-foreground">התמקד בחיפוש</span>
-                      <kbd className="bg-navy text-white px-2 py-0.5 rounded text-xs">Ctrl+F</kbd>
-                    </div>
-                    <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2">
-                      <span className="text-muted-foreground">שמור חיפוש</span>
-                      <kbd className="bg-navy text-white px-2 py-0.5 rounded text-xs">Ctrl+S</kbd>
-                    </div>
-                    <div className="flex items-center justify-between bg-secondary/30 rounded-lg px-3 py-2">
-                      <span className="text-muted-foreground">ייצא תוצאות</span>
-                      <kbd className="bg-navy text-white px-2 py-0.5 rounded text-xs">Ctrl+E</kbd>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-navy mb-2">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-navy dark:text-foreground mb-2">
                 מערכת חיפוש מתקדמת
               </h2>
-              <p className="text-base text-muted-foreground max-w-xl mx-auto">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto px-4">
                 בנה שאילתות חיפוש מורכבות עם כל הכלים במקום אחד
               </p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 bg-white p-2 rounded-xl border border-gold/30 shadow-md">
+            <div className="flex gap-2 bg-white dark:bg-card p-2 rounded-xl border border-gold/30 shadow-md">
               <button
                 onClick={() => setActiveTab('search')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
@@ -1630,21 +1619,21 @@ const Index = () => {
           </Tooltip>
         </div>
 
-        {/* Scroll to top button */}
+        {/* Scroll to top button - Mobile optimized */}
         <Button
           onClick={scrollToTop}
           variant="secondary"
           size="icon"
-          className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full shadow-2xl transition-all hover:scale-110"
+          className="fixed bottom-20 sm:bottom-8 right-4 sm:right-8 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl transition-all hover:scale-110 touch-target"
         >
-          <ArrowUp className="w-6 h-6" />
+          <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
         </Button>
 
         {/* Footer */}
-        <footer className="bg-navy border-t-4 border-gold mt-12 py-8">
-          <div className="container mx-auto px-6 text-center">
-            <p className="text-white font-bold text-lg">חיפוש חכם - ניתוח טקסטים מתקדם</p>
-            <p className="text-gold text-sm mt-2 font-semibold">הנתונים נשמרים במחשב שלך 💾</p>
+        <footer className="bg-navy dark:bg-card border-t-4 border-gold mt-12 py-6 sm:py-8">
+          <div className="container mx-auto px-4 sm:px-6 text-center">
+            <p className="text-white dark:text-foreground font-bold text-base sm:text-lg">חיפוש חכם - ניתוח טקסטים מתקדם</p>
+            <p className="text-gold text-xs sm:text-sm mt-2 font-semibold">הנתונים נשמרים במחשב שלך 💾</p>
           </div>
         </footer>
 
