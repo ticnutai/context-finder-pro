@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Book, FileText, Trash2, Eye } from 'lucide-react';
+import { Book, FileText, Trash2, Eye, Folder } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
   fetchAllReferencesGrouped, 
-  fetchDocuments, 
+  fetchDocuments,
+  fetchDocumentsByFolder,
   fetchReferencesByDocument,
   deleteDocument,
   SourceReference, 
@@ -18,6 +19,7 @@ import { numberToHebrew } from '@/utils/hebrewUtils';
 
 interface IndexViewerProps {
   refreshTrigger: number;
+  selectedFolderId?: string | null;
 }
 
 // פורמט דף ועמוד באותיות עבריות
@@ -27,7 +29,7 @@ function formatDafAmud(daf: number, amud: string): string {
   return `דף ${dafHebrew} עמוד ${amudHebrew}`;
 }
 
-export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
+export function IndexViewer({ refreshTrigger, selectedFolderId }: IndexViewerProps) {
   const { toast } = useToast();
   const [view, setView] = useState<'tractates' | 'documents'>('tractates');
   const [groupedRefs, setGroupedRefs] = useState<Map<string, SourceReference[]>>(new Map());
@@ -41,17 +43,39 @@ export function IndexViewer({ refreshTrigger }: IndexViewerProps) {
 
   useEffect(() => {
     loadData();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, selectedFolderId]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [refs, docs] = await Promise.all([
-        fetchAllReferencesGrouped(),
-        fetchDocuments(),
-      ]);
-      setGroupedRefs(refs);
+      // Fetch documents - filter by folder if selected
+      let docs: Document[];
+      if (selectedFolderId !== undefined) {
+        docs = await fetchDocumentsByFolder(selectedFolderId);
+      } else {
+        docs = await fetchDocuments();
+      }
       setDocuments(docs);
+      
+      // Fetch all references grouped
+      const refs = await fetchAllReferencesGrouped();
+      
+      // Filter references by documents in the selected folder
+      if (selectedFolderId !== undefined && docs.length > 0) {
+        const docIds = new Set(docs.map(d => d.id));
+        const filteredRefs = new Map<string, SourceReference[]>();
+        
+        refs.forEach((refList, tractate) => {
+          const filtered = refList.filter(r => r.document && docIds.has(r.document.id));
+          if (filtered.length > 0) {
+            filteredRefs.set(tractate, filtered);
+          }
+        });
+        
+        setGroupedRefs(filteredRefs);
+      } else {
+        setGroupedRefs(refs);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {

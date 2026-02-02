@@ -43,6 +43,7 @@ export type Database = {
           content: string | null
           created_at: string
           file_path: string | null
+          folder_id: string | null
           id: string
           name: string
           updated_at: string
@@ -51,6 +52,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           file_path?: string | null
+          folder_id?: string | null
           id?: string
           name: string
           updated_at?: string
@@ -59,11 +61,61 @@ export type Database = {
           content?: string | null
           created_at?: string
           file_path?: string | null
+          folder_id?: string | null
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      folders: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       index_references: {
         Row: {

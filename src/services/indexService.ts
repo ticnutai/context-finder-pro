@@ -39,6 +39,17 @@ export interface CustomIndex {
   updated_at: string;
 }
 
+export interface Folder {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Fetch all tractates
 export async function fetchTractates(): Promise<Tractate[]> {
   const { data, error } = await supabase
@@ -77,10 +88,10 @@ export async function uploadDocument(file: File, originalName?: string): Promise
 }
 
 // Create document record
-export async function createDocument(name: string, content: string, filePath?: string): Promise<Document> {
+export async function createDocument(name: string, content: string, filePath?: string, folderId?: string): Promise<Document> {
   const { data, error } = await supabase
     .from('documents')
-    .insert({ name, content, file_path: filePath || null })
+    .insert({ name, content, file_path: filePath || null, folder_id: folderId || null })
     .select()
     .single();
   
@@ -275,4 +286,85 @@ export async function deleteCustomIndex(id: string): Promise<void> {
     .eq('id', id);
   
   if (error) throw error;
+}
+
+// ============= Folder Functions =============
+
+// Fetch all folders
+export async function fetchFolders(): Promise<Folder[]> {
+  const { data, error } = await supabase
+    .from('folders')
+    .select('*')
+    .order('name');
+  
+  if (error) throw error;
+  return data || [];
+}
+
+// Create folder
+export async function createFolder(name: string, description?: string, color?: string, parentId?: string): Promise<Folder> {
+  const { data, error } = await supabase
+    .from('folders')
+    .insert({ 
+      name, 
+      description: description || null, 
+      color: color || '#FFD700',
+      parent_id: parentId || null 
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+// Update folder
+export async function updateFolder(id: string, updates: Partial<Omit<Folder, 'id' | 'created_at'>>): Promise<Folder> {
+  const { data, error } = await supabase
+    .from('folders')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+// Delete folder
+export async function deleteFolder(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('folders')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+}
+
+// Move documents to folder
+export async function moveDocumentsToFolder(documentIds: string[], folderId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('documents')
+    .update({ folder_id: folderId })
+    .in('id', documentIds);
+  
+  if (error) throw error;
+}
+
+// Fetch documents by folder
+export async function fetchDocumentsByFolder(folderId: string | null): Promise<Document[]> {
+  let query = supabase
+    .from('documents')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (folderId) {
+    query = query.eq('folder_id', folderId);
+  } else {
+    query = query.is('folder_id', null);
+  }
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 }
