@@ -12,6 +12,7 @@ import { SearchWithinResults } from '@/components/SearchWithinResults';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { SettingsExportImport } from '@/components/SettingsExportImport';
+import { SefariaTextViewer } from '@/components/SefariaTextViewer';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useWordLists } from '@/hooks/useWordLists';
 import { useKeyboardShortcuts, useResultsNavigation } from '@/hooks/useKeyboardShortcuts';
@@ -22,7 +23,7 @@ import { RulesValidationSystem } from '@/components/RulesValidationSystem';
 import { ActiveRulesPreview } from '@/components/ActiveRulesPreview';
 import { SettingsButton } from '@/components/SettingsButton';
 import { TestingPanel } from '@/components/TestingPanel';
-import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex, ChevronDown, ChevronUp, Keyboard } from 'lucide-react';
+import { Search, Plus, X, Filter, Sparkles, HelpCircle, BookTemplate, Hash, Languages, Type, AlignJustify, Calculator, FileText, List, Eye, ArrowUp, Bug, Regex, ChevronDown, ChevronUp, Keyboard, Book } from 'lucide-react';
 import { expandSearchTerm } from '@/utils/hebrewUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -317,7 +318,7 @@ const Index = () => {
   });
 
   const [showTemplates, setShowTemplates] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'tests'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'tests' | 'sefaria'>('search');
   
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -1002,6 +1003,17 @@ const Index = () => {
                 חיפוש
               </button>
               <button
+                onClick={() => setActiveTab('sefaria')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+                  activeTab === 'sefaria'
+                    ? 'bg-gold text-white shadow-md'
+                    : 'text-navy/70 hover:bg-gold/10 hover:text-navy'
+                }`}
+              >
+                <Book className="w-5 h-5" />
+                תלמוד בבלי
+              </button>
+              <button
                 onClick={() => setActiveTab('tests')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
                   activeTab === 'tests'
@@ -1013,6 +1025,22 @@ const Index = () => {
                 בדיקות
               </button>
             </div>
+
+            {/* Sefaria Tab */}
+            {activeTab === 'sefaria' && (
+              <div className="bg-white dark:bg-card rounded-2xl p-6 animate-fade-in border border-gold shadow-xl text-right">
+                <SefariaTextViewer 
+                  onTextSelect={(selectedText, reference) => {
+                    setText(selectedText);
+                    setActiveTab('search');
+                    toast({
+                      title: 'טקסט נטען',
+                      description: `${reference} נטען לחיפוש`,
+                    });
+                  }} 
+                />
+              </div>
+            )}
 
             {/* Tests Tab */}
             {activeTab === 'tests' && (
