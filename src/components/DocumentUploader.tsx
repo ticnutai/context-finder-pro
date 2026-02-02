@@ -1,30 +1,55 @@
-import { useState, useCallback } from 'react';
-import { Upload, FileText, X, Loader2 } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Upload, FileText, X, Loader2, Folder, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { findTalmudReferences, formatReference, TalmudReference } from '@/utils/talmudParser';
 import { 
   createDocument, 
   saveSourceReferences, 
   uploadDocument,
-  Tractate 
+  fetchFolders,
+  Tractate,
+  Folder as FolderType
 } from '@/services/indexService';
 
 interface DocumentUploaderProps {
   tractates: Tractate[];
   onDocumentProcessed: () => void;
+  defaultFolderId?: string | null;
 }
 
-export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUploaderProps) {
+export function DocumentUploader({ tractates, onDocumentProcessed, defaultFolderId }: DocumentUploaderProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [docName, setDocName] = useState('');
   const [textContent, setTextContent] = useState('');
   const [previewRefs, setPreviewRefs] = useState<TalmudReference[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [folders, setFolders] = useState<FolderType[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(defaultFolderId || null);
+
+  useEffect(() => {
+    loadFolders();
+  }, []);
+
+  useEffect(() => {
+    if (defaultFolderId !== undefined) {
+      setSelectedFolderId(defaultFolderId);
+    }
+  }, [defaultFolderId]);
+
+  const loadFolders = async () => {
+    try {
+      const data = await fetchFolders();
+      setFolders(data);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+    }
+  };
 
   const handleTextChange = useCallback((text: string) => {
     setTextContent(text);
@@ -121,8 +146,8 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
         filePath = await uploadDocument(file, file.name);
       }
 
-      // יצירת רשומת מסמך
-      const doc = await createDocument(docName, textContent, filePath);
+      // יצירת רשומת מסמך עם תיקייה
+      const doc = await createDocument(docName, textContent, filePath, selectedFolderId || undefined);
 
       // חיפוש וזיהוי מראי מקומות
       const refs = findTalmudReferences(textContent);
@@ -204,6 +229,37 @@ export function DocumentUploader({ tractates, onDocumentProcessed }: DocumentUpl
             הסר קובץ
           </Button>
         )}
+      </div>
+
+      {/* בחירת תיקייה */}
+      <div className="text-right">
+        <label className="block text-sm font-bold text-navy mb-2">
+          תיקייה (אופציונלי)
+        </label>
+        <Select 
+          value={selectedFolderId || 'none'} 
+          onValueChange={(val) => setSelectedFolderId(val === 'none' ? null : val)}
+        >
+          <SelectTrigger className="rounded-xl text-right">
+            <SelectValue placeholder="בחר תיקייה..." />
+          </SelectTrigger>
+          <SelectContent dir="rtl">
+            <SelectItem value="none">
+              <span className="flex items-center gap-2">
+                <Folder className="w-4 h-4 text-muted-foreground" />
+                ללא תיקייה
+              </span>
+            </SelectItem>
+            {folders.map(folder => (
+              <SelectItem key={folder.id} value={folder.id}>
+                <span className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4" style={{ color: folder.color || '#FFD700' }} />
+                  {folder.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* שם המסמך */}
